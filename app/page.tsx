@@ -38,7 +38,6 @@ export default function Login() {
     setError(false);
   }, []);
 
- 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (/^[0-9]$/.test(e.key)) {
@@ -57,40 +56,53 @@ export default function Login() {
   const keypad = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-pink-50 p-4 select-none">
-      <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-xl max-w-xs sm:max-w-sm w-full text-center flex flex-col items-center">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">Bienvenida a TodoLaura ❤️</h1>
-        <p className="text-xs sm:text-sm text-gray-500 mb-6">Ingresa el PIN usando la pantalla o el teclado</p>
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#120309] via-[#1f0510] to-[#0a0104] p-4 select-none relative overflow-hidden">
+      {/* Luz de fondo suave parecida a la imagen */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-900/20 rounded-full blur-3xl pointer-events-none" />
 
+      <div className="relative z-10 bg-[#1e0a14]/80 backdrop-blur-xl border border-pink-500/20 p-8 rounded-3xl shadow-2xl max-w-xs sm:max-w-sm w-full text-center flex flex-col items-center">
         
-        <div className={`flex justify-center gap-3 mb-6 ${error ? 'animate-bounce' : ''}`}>
+        {/* Pill/Badge superior como en el Dashboard */}
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-950/60 border border-pink-500/30 text-[11px] font-medium text-pink-300 mb-4">
+          <span>💖</span> Un rincón especial para ti
+        </div>
+
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-1">
+          Bienvenida a TodoLaura
+        </h1>
+        <p className="text-xs text-pink-200/60 mb-6">
+          Ingresa el PIN usando la pantalla o el teclado
+        </p>
+
+        {/* Indicadores de PIN estilo neón */}
+        <div className={`flex justify-center gap-3 mb-4 ${error ? 'animate-bounce' : ''}`}>
           {[0, 1, 2, 3].map((index) => (
             <div
               key={index}
-              className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${
+              className={`w-4 h-4 rounded-full border transition-all duration-200 ${
                 error
-                  ? 'bg-red-500 border-red-500'
+                  ? 'bg-red-500 border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]'
                   : pin.length > index
-                  ? 'bg-pink-500 border-pink-500 scale-110'
-                  : 'border-pink-300 bg-transparent'
+                  ? 'bg-pink-500 border-pink-400 scale-110 shadow-[0_0_12px_rgba(236,72,153,0.8)]'
+                  : 'border-pink-500/30 bg-pink-950/30'
               }`}
             />
           ))}
         </div>
 
-       
-        <div className="h-6 mb-2">
-          {error && <p className="text-red-500 text-xs font-semibold">Contraseña incorrecta</p>}
+        {/* Mensaje de error */}
+        <div className="h-6 mb-2 flex items-center justify-center">
+          {error && <p className="text-red-400 text-xs font-semibold tracking-wide">Contraseña incorrecta</p>}
         </div>
 
-      
+        {/* Teclado numérico */}
         <div className="grid grid-cols-3 gap-3 w-full max-w-[240px]">
           {keypad.map((num) => (
             <button
               key={num}
               type="button"
               onClick={() => handleKeyPress(num)}
-              className="w-16 h-16 rounded-full bg-pink-100 hover:bg-pink-200 active:bg-pink-300 text-pink-700 font-bold text-xl flex items-center justify-center mx-auto transition-colors shadow-sm"
+              className="w-16 h-16 rounded-2xl bg-pink-950/40 hover:bg-pink-900/50 active:scale-95 text-pink-100 font-bold text-xl flex items-center justify-center mx-auto transition-all border border-pink-500/10 hover:border-pink-500/40 shadow-inner"
             >
               {num}
             </button>
@@ -98,21 +110,21 @@ export default function Login() {
           <button
             type="button"
             onClick={handleClear}
-            className="w-16 h-16 rounded-full bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-600 font-medium text-xs flex items-center justify-center mx-auto transition-colors"
+            className="w-16 h-16 rounded-2xl bg-pink-950/20 hover:bg-pink-900/40 active:scale-95 text-pink-300/70 hover:text-pink-200 font-medium text-xs flex items-center justify-center mx-auto transition-all border border-pink-500/10"
           >
             Borrar
           </button>
           <button
             type="button"
             onClick={() => handleKeyPress('0')}
-            className="w-16 h-16 rounded-full bg-pink-100 hover:bg-pink-200 active:bg-pink-300 text-pink-700 font-bold text-xl flex items-center justify-center mx-auto transition-colors shadow-sm"
+            className="w-16 h-16 rounded-2xl bg-pink-950/40 hover:bg-pink-900/50 active:scale-95 text-pink-100 font-bold text-xl flex items-center justify-center mx-auto transition-all border border-pink-500/10 hover:border-pink-500/40 shadow-inner"
           >
             0
           </button>
           <button
             type="button"
             onClick={handleDelete}
-            className="w-16 h-16 rounded-full bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-600 font-bold text-lg flex items-center justify-center mx-auto transition-colors"
+            className="w-16 h-16 rounded-2xl bg-pink-950/20 hover:bg-pink-900/40 active:scale-95 text-pink-300/70 hover:text-pink-200 font-bold text-lg flex items-center justify-center mx-auto transition-all border border-pink-500/10"
           >
             ⌫
           </button>

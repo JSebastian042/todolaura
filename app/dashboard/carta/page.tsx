@@ -43,19 +43,19 @@ export default function CartaPage() {
           </p>
 
           <p>
-            He creado esta página, se llama TodoLaura (To-Do porque "ayuda" en algunas cosas y Laura pues porque es para ti jaja) Es el regalo de mes que no te pude dar
+          Hoy es el segundo despliegue de TodoLaura, he hecho muchas modificaciones y ahora ya puedes guardar recordatorios y palabras nuevas en el diccionario
           </p>
 
           <p>
-            Mi reina estos detalles los hago con el corazón, eres la mujer que atrapó mi corazón y lo tendrá por siempre, no tengo palabras para describir lo que siento cuando hablo contigo. Quiero que siempre seas tú y nadie más mi amada
+          Mi reina, esta página es para poder transmitir todo el amor que siento por ti en un campo que conozco bien como lo es el desarrollo web. Quiero que siempre te sientas amada con estos pequeños detalles
           </p>
 
           <p>
-            Cuando nos veamos en persona y sepamos, tan solo con los ojos, que es lo que queremos podremos llegar a hacer cosas grandes, juntos. Cómo te lo he estado repitiendo, tú mi ponquecito ya no estarás nunca más solita, aquí estoy yo para ser tu compañero y poder llegar a ser más que un amigo (todo a su tiempo)
+          Eres mi razón y la persona por la que sonrio todas las mañanas y por la que me siento mal en las noches por dejarla sola. Estoy muy emcionado por lo que pasará después con nosotros, pero me alegra que podamos ser lo suficientemente maduros de saber que es lo que queremos (Que es estar juntos, obviamente muejeje)
           </p>
 
           <p>
-           Posdata: Esta página la puedo poner 360°, por si depronto te gustaría alguna otra funcionalidad o quisieras cambiar algo la página está en mi completo dominio (o sea tu dominio) y trataré que se pueda ver cada vez que quieras
+           Posdata: Lo mismo que te dije la vez pasada, si quieres alguna otra cosita me avisas que yo con mucho gusto lo hago Laurita, todo lo que sea por ti mi reina preciosa, mi razón, la persona que quiero así y la mujer con la que quiero estar el resto de mi vida
           </p>
 
           <p className="pt-4 font-semibold text-right text-amber-900">

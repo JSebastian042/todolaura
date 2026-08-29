@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Reminder } from '@/app/types/calendar';
 import { supabase } from '@/lib/supabaseClient';
+import Link from 'next/link';
 
 const MONTHS = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -227,6 +228,12 @@ export default function CalendarDashboard() {
               </button>
             </form>
           </div>
+           <Link
+          href="/dashboard"
+          className="px-8 py-3 bg-amber-950/80 hover:bg-amber-900 text-amber-100 font-medium rounded-full text-base border border-amber-700/40 transition shadow-lg backdrop-blur-md hover:scale-105 active:scale-95 inline-block"
+        >
+          Volver al panel principal
+        </Link>
         </div>
       )}
     </div>
