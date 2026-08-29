@@ -17,7 +17,7 @@ const cancionesFavoritas: Cancion[] = [
     id: 1,
     titulo: "After You",
     artista: "Stray Kids",
-    album: "SKZ-REPLAY",
+    album: "THIS & THAT",
     portada: "/portada/after.jpg",
     audio: "/musica/after.mp3",
   },
@@ -25,7 +25,7 @@ const cancionesFavoritas: Cancion[] = [
     id: 2,
     titulo: "This & That",
     artista: "Stray Kids",
-    album: "S-CLASS Extra",
+    album: "THIS & THAT",
     portada: "/portada/this.jpg",
     audio: "/musica/this.mp3",
   },
@@ -53,6 +53,22 @@ const cancionesFavoritas: Cancion[] = [
     portada: "/portada/nuestro.jpg",
     audio: "/musica/nuestro.mp3",
   },
+   {
+    id: 6,
+    titulo: "Amor Narcótico",
+    artista: "Chichi Peralta",
+    album: "Pa' otro la'o",
+    portada: "/portada/amor.jpg",
+    audio: "/musica/amor.mp3",
+  },
+   {
+    id: 7,
+    titulo: "She's Crazy But She's Mine",
+    artista: "Alex Sparrow",
+    album: "Single",
+    portada: "/portada/gacha.jpg",
+    audio: "/musica/gacha.mp3",
+  },
 ];
 
 export default function MusicaPage() {
@@ -63,7 +79,7 @@ export default function MusicaPage() {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Selecciona una canción aleatoria al cargar la página
+  
   useEffect(() => {
     const aleatorio = Math.floor(Math.random() * cancionesFavoritas.length);
     setIndiceActual(aleatorio);
@@ -71,7 +87,7 @@ export default function MusicaPage() {
 
   const cancionActual = cancionesFavoritas[indiceActual];
 
-  // Recarga y reproduce cuando se cambia la pista activa
+ 
   useEffect(() => {
     if (audioRef.current && cancionActual) {
       audioRef.current.load();
@@ -146,7 +162,7 @@ export default function MusicaPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-rose-950 via-slate-950 to-pink-950 flex flex-col items-center justify-center p-4 sm:p-8 select-none relative overflow-hidden">
       
-      {/* Reproductor de Audio nativo conectado a tu carpeta /public/musica */}
+      
       <audio
         ref={audioRef}
         src={cancionActual.audio}
@@ -161,7 +177,7 @@ export default function MusicaPage() {
 
       <div className="relative bg-rose-950/40 backdrop-blur-xl p-8 sm:p-10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(244,114,182,0.15)] max-w-lg w-full text-center border border-pink-500/20 flex flex-col items-center transition-all duration-300">
         
-        {/* Encabezado */}
+      
         <div className="flex items-center gap-2 mb-8 w-full justify-center">
           <span className="text-2xl">✨</span>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-rose-200 to-pink-400">
@@ -179,7 +195,7 @@ export default function MusicaPage() {
           />
         </div>
 
-        {/* Informacion de la canción */}
+       
         <div className="mb-6 w-full px-2 text-left">
           <h2 className="text-3xl font-black text-white tracking-tight truncate drop-shadow-sm">
             {cancionActual.titulo}
@@ -192,7 +208,7 @@ export default function MusicaPage() {
           </p>
         </div>
 
-        {/* Barra de progreso interactiva */}
+       
         <div className="w-full mb-8">
           <input
             type="range"
@@ -208,7 +224,7 @@ export default function MusicaPage() {
           </div>
         </div>
 
-        {/* Botones del reproductor */}
+       
         <div className="flex items-center justify-center gap-8 mb-10 text-pink-200">
           <button 
             onClick={anteriorCancion}
@@ -247,7 +263,7 @@ export default function MusicaPage() {
           </button>
         </div>
 
-        {/* Volver */}
+        
         <Link
           href="/dashboard"
           className="px-8 py-3.5 bg-gradient-to-r from-pink-500/20 to-rose-500/20 hover:from-pink-500/30 hover:to-rose-500/30 text-pink-200 font-bold rounded-full text-base border border-pink-400/30 transition shadow-lg w-full backdrop-blur-md"

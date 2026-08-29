@@ -8,7 +8,7 @@ export default function DashboardPage() {
       titulo: 'Frases Motivacionales',
       descripcion: 'Mensajes especiales para alegrar tu día',
       icono: '✨',
-      href: '/frases',
+      href: '/dashboard/frases',
       colorGradient: 'from-amber-400/20 to-yellow-500/10 border-amber-400/30 text-amber-200',
       hoverGlow: 'hover:shadow-[0_0_25px_rgba(251,191,36,0.3)]',
     },
@@ -16,7 +16,7 @@ export default function DashboardPage() {
       titulo: 'Carta de Amor',
       descripcion: 'Un mensaje escrito desde el corazón',
       icono: '💌',
-      href: '/carta',
+      href: '/dashboard/carta',
       colorGradient: 'from-rose-500/20 to-red-500/10 border-rose-400/30 text-rose-200',
       hoverGlow: 'hover:shadow-[0_0_25px_rgba(244,63,94,0.3)]',
     },
@@ -24,7 +24,7 @@ export default function DashboardPage() {
       titulo: 'Música Favorita',
       descripcion: 'Tu playlist especial para escuchar',
       icono: '🎵',
-      href: '/musica',
+      href: '/dashboard/musica',
       colorGradient: 'from-purple-500/20 to-indigo-500/10 border-purple-400/30 text-purple-200',
       hoverGlow: 'hover:shadow-[0_0_25px_rgba(168,85,247,0.3)]',
     },
@@ -32,9 +32,25 @@ export default function DashboardPage() {
       titulo: 'Regalo Virtual',
       descripcion: 'Una sorpresa hecha especialmente para ti',
       icono: '🌷',
-      href: '/regalo',
+      href: '/dashboard/regalo',
       colorGradient: 'from-pink-500/20 to-rose-400/10 border-pink-400/30 text-pink-200',
       hoverGlow: 'hover:shadow-[0_0_25px_rgba(244,114,182,0.3)]',
+    },
+    {
+      titulo: 'Diccionario',
+      descripcion: 'Nuestras palabras con significados únicos',
+      icono: '📖',
+      href: '/dashboard/diccionario',
+      colorGradient: 'from-fuchsia-500/20 to-pink-500/10 border-fuchsia-400/30 text-fuchsia-200',
+      hoverGlow: 'hover:shadow-[0_0_25px_rgba(217,70,239,0.3)]',
+    },
+    {
+      titulo: 'Calendario',
+      descripcion: 'Fechas e hitos inolvidables juntos',
+      icono: '🗓️',
+      href: '/dashboard/calendario',
+      colorGradient: 'from-sky-500/20 to-indigo-500/10 border-sky-400/30 text-sky-200',
+      hoverGlow: 'hover:shadow-[0_0_25px_rgba(56,189,248,0.3)]',
     },
   ];
 
@@ -43,7 +59,7 @@ export default function DashboardPage() {
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 sm:w-[500px] h-96 sm:h-[500px] bg-pink-500/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-72 sm:w-96 h-72 sm:h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="relative max-w-4xl w-full flex flex-col items-center">
+      <div className="relative max-w-4xl w-full flex flex-col items-center py-8">
         <div className="text-center mb-10 sm:mb-14">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-300 text-xs sm:text-sm font-medium mb-4 backdrop-blur-md">
             <span>💖</span> Un rincón especial para ti
