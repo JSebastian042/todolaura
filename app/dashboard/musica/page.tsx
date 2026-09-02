@@ -69,6 +69,30 @@ const cancionesFavoritas: Cancion[] = [
     portada: "/portada/gacha.jpg",
     audio: "/musica/gacha.mp3",
   },
+   {
+    id: 8,
+    titulo: "FARMING",
+    artista: "Stray Kids",
+    album: "THIS & THAT",
+    portada: "/portada/farming.jpg",
+    audio: "/musica/farming.mp3",
+  },
+   {
+    id: 9,
+    titulo: "Que Nadie Sepa Mi Sufrir",
+    artista: "Julio Jaramillo",
+    album: "El Sentimental de América",
+    portada: "/portada/sufrir.jpg",
+    audio: "/musica/sufrir.mp3",
+  },
+  {
+    id: 10,
+    titulo: "La Danza De Los Mirlos",
+    artista: "Los Mirlos",
+    album: "Cumbia Amazónica",
+    portada: "/portada/mirlos.jpg",
+    audio: "/musica/mirlos.mp3",
+  },
 ];
 
 export default function MusicaPage() {
@@ -186,7 +210,7 @@ export default function MusicaPage() {
           <span className="text-2xl">💖</span>
         </div>
 
-        {/* Portada */}
+       
         <div className="relative w-72 h-72 sm:w-80 sm:h-80 mb-8 rounded-3xl overflow-hidden shadow-2xl border-2 border-pink-300/30 bg-rose-900/30 flex items-center justify-center group">
           <img
             src={cancionActual.portada}
