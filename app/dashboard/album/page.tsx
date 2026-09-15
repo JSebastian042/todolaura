@@ -1,140 +1,189 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-
-interface Recuerdo {
-  id: string;
-  titulo: string;
-  fecha: string;
-  categoria: 'Viajes' | 'Citas' | 'Especiales' | 'Momentos';
-  descripcion: string;
-  notaAmor?: string;
-  imagenUrl?: string; // Opcional por si deseas colocar fotos reales más adelante
-  emojis: string;
-}
-
-const recuerdos: Recuerdo[] = [
-  {
-    id: '1',
-    titulo: 'Nuestra primera cita',
-    fecha: '14 de Febrero, 2024',
-    categoria: 'Citas',
-    descripcion: 'Ese día no podía dejar de mirarte y me temblaban un poco las manos de los nervios. Tu sonrisa hizo que todo valiera la pena.',
-    notaAmor: 'El día en que mi mundo cambió para siempre ♥',
-    emojis: '☕🌹',
-  },
-  {
-    id: '2',
-    titulo: 'Paseo bajo la lluvia',
-    fecha: '28 de Marzo, 2024',
-    categoria: 'Momentos',
-    descripcion: 'Nos atrapó la lluvia sin sombrilla y corrimos a refugiarnos. Terminamos muertos de la risa y tomando algo caliente juntos.',
-    notaAmor: 'Contigo hasta los días grises tienen los colores más bonitos.',
-    emojis: '🌧️✨',
-  },
-  {
-    id: '3',
-    titulo: 'Viaje juntos de fin de semana',
-    fecha: '15 de Mayo, 2024',
-    categoria: 'Viajes',
-    descripcion: 'Explorar lugares nuevos de tu mano es una de mis cosas favoritas en el mundo. Esas fotos al atardecer quedaron hermosas.',
-    notaAmor: 'Mi destino favorito siempre será a tu lado 🌷',
-    emojis: '🌅🚗',
-  },
-  {
-    id: '4',
-    titulo: 'Tarde de películas y snacks',
-    fecha: '10 de Julio, 2024',
-    categoria: 'Especiales',
-    descripcion: 'No necesitábamos salir a ningún lado sofisticado. Solo tus abrazos, cobijas y nuestras canciones favoritas sonando de fondo.',
-    notaAmor: 'Tu abrazo es mi lugar seguro.',
-    emojis: '🍿🎬',
-  },
-  {
-    id: '5',
-    titulo: 'Un detalle inolvidable',
-    fecha: '20 de Agosto, 2024',
-    categoria: 'Especiales',
-    descripcion: 'La forma en que me escuchas y te preocupas por las pequeñas cosas me demuestra cada día lo maravillosa que eres.',
-    notaAmor: 'Gracias por ser tan única, Laurita.',
-    emojis: '💌🌸',
-  },
-];
-
-const categorias = ['Todos', 'Citas', 'Momentos', 'Viajes', 'Especiales'] as const;
+import { supabase } from '@/lib/supabaseClient';
+import { getActiveUser, USERS, UserProfile } from '@/app/types/auth';
+import { Recuerdo, CategoriaRecuerdo } from '@/app/types/content';
+import { categoriasAlbum, recuerdosIniciales } from '@/app/data/memories';
+import AmbientBackground from '@/app/components/common/AmbientBackground';
+import BackButton from '@/app/components/common/BackButton';
+import AuthorBadge from '@/app/components/common/AuthorBadge';
 
 export default function AlbumPage() {
+  const [currentUser, setCurrentUser] = useState<UserProfile>(USERS.laura);
   const [categoriaActiva, setCategoriaActiva] = useState<string>('Todos');
   const [recuerdoSeleccionado, setRecuerdoSeleccionado] = useState<Recuerdo | null>(null);
+  const [recuerdos, setRecuerdos] = useState<Recuerdo[]>(recuerdosIniciales);
+  const [modalNuevoAbierto, setModalNuevoAbierto] = useState<boolean>(false);
+
+  // Campos de formulario para nuevo recuerdo
+  const [nuevoTitulo, setNuevoTitulo] = useState('');
+  const [nuevaFecha, setNuevaFecha] = useState('');
+  const [nuevaCategoria, setNuevaCategoria] = useState<CategoriaRecuerdo>('Momentos');
+  const [nuevaDescripcion, setNuevaDescripcion] = useState('');
+  const [nuevaNotaAmor, setNuevaNotaAmor] = useState('');
+  const [nuevaImagenUrl, setNuevaImagenUrl] = useState('');
+  const [nuevosEmojis, setNuevosEmojis] = useState('📸✨');
+
+  useEffect(() => {
+    const user = getActiveUser();
+    setCurrentUser(user);
+
+    const cargarRecuerdos = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('album')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          const mapeados: Recuerdo[] = data.map((item) => ({
+            id: item.id,
+            titulo: item.titulo,
+            fecha: item.fecha,
+            categoria: item.categoria,
+            descripcion: item.descripcion,
+            notaAmor: item.nota_amor,
+            imagenUrl: item.imagen_url,
+            emojis: item.emojis || '📸✨',
+            author: item.author || 'Sebastián',
+          }));
+          setRecuerdos([...mapeados, ...recuerdosIniciales]);
+        } else {
+          const local = localStorage.getItem('todolaura_album_recuerdos');
+          if (local) {
+            setRecuerdos([...JSON.parse(local), ...recuerdosIniciales]);
+          }
+        }
+      } catch (err) {
+        console.error('Error cargando recuerdos:', err);
+      }
+    };
+
+    cargarRecuerdos();
+  }, []);
+
+  // Bloqueo especial para Laura (opción sorpresa)
+  if (currentUser.id === 'laura') {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-[#120309] via-[#1f0510] to-[#0a0104] flex flex-col items-center justify-center p-4 sm:p-8 select-none text-center relative overflow-hidden">
+        <AmbientBackground />
+        <div className="relative max-w-md w-full bg-[#1e0a14]/90 border border-pink-500/30 p-6 sm:p-8 rounded-3xl shadow-2xl backdrop-blur-xl flex flex-col items-center">
+          <div className="text-5xl sm:text-6xl mb-4 animate-bounce">🔒🌷</div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">¡Rinconcito Secreto!</h1>
+          <p className="text-xs sm:text-sm text-pink-200/80 leading-relaxed mb-6">
+            Hola mi reina, esta es la opción secreta que preparé para nosotros. ¡No podrás verla hasta que nos veamos por primera vez! ♥
+          </p>
+          <Link
+            href="/dashboard"
+            className="w-full py-3 bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 text-white font-bold rounded-2xl text-xs sm:text-sm transition shadow-lg shadow-pink-900/40"
+          >
+            Volver al panel principal ✨
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  const handleGuardarRecuerdo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nuevoTitulo.trim() || !nuevaDescripcion.trim()) return;
+
+    const nuevoRecuerdo: Recuerdo = {
+      id: String(Date.now()),
+      titulo: nuevoTitulo.trim(),
+      fecha: nuevaFecha.trim() || 'Fecha especial',
+      categoria: nuevaCategoria,
+      descripcion: nuevaDescripcion.trim(),
+      notaAmor: nuevaNotaAmor.trim() || undefined,
+      imagenUrl: nuevaImagenUrl.trim() || undefined,
+      emojis: nuevosEmojis.trim() || '📸✨',
+      author: currentUser.displayName,
+    };
+
+    try {
+      await supabase.from('album').insert([{
+        titulo: nuevoRecuerdo.titulo,
+        fecha: nuevoRecuerdo.fecha,
+        categoria: nuevoRecuerdo.categoria,
+        descripcion: nuevoRecuerdo.descripcion,
+        nota_amor: nuevoRecuerdo.notaAmor,
+        imagen_url: nuevoRecuerdo.imagenUrl,
+        emojis: nuevoRecuerdo.emojis,
+        author: nuevoRecuerdo.author,
+      }]);
+    } catch (err) {
+      console.warn('Fallback a almacenamiento local:', err);
+    }
+
+    const prev = JSON.parse(localStorage.getItem('todolaura_album_recuerdos') || '[]');
+    localStorage.setItem('todolaura_album_recuerdos', JSON.stringify([nuevoRecuerdo, ...prev]));
+
+    setRecuerdos((prevList) => [nuevoRecuerdo, ...prevList]);
+    setNuevoTitulo('');
+    setNuevaFecha('');
+    setNuevaDescripcion('');
+    setNuevaNotaAmor('');
+    setNuevaImagenUrl('');
+    setNuevosEmojis('📸✨');
+    setModalNuevoAbierto(false);
+  };
 
   const recuerdosFiltrados = categoriaActiva === 'Todos'
     ? recuerdos
     : recuerdos.filter((r) => r.categoria === categoriaActiva);
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-[#120309] via-[#2d0a1b] to-[#120309] text-white p-4 md:p-8 overflow-hidden font-sans flex flex-col justify-between">
-      
-      {/* Fondo con Decoración de Tulipanes Ilustrados */}
-      <div className="absolute inset-0 pointer-events-none opacity-30 flex justify-between items-end px-4">
-        <svg className="w-36 h-56 sm:w-56 sm:h-80 text-pink-500 fill-current" viewBox="0 0 100 150">
-          <path d="M50 150 Q50 100 30 80 Q10 100 10 130 C10 150 40 150 50 150 Z" opacity="0.4" />
-          <path d="M50 150 Q50 90 70 70 Q90 90 90 120 C90 150 60 150 50 150 Z" opacity="0.4" />
-          <path d="M50 150 Q50 80 50 40" stroke="currentColor" strokeWidth="4" fill="none" />
-          <path d="M50 40 C30 10 20 40 35 60 C45 70 50 40 50 40 Z" />
-          <path d="M50 40 C70 10 80 40 65 60 C55 70 50 40 50 40 Z" />
-          <path d="M40 35 C40 10 60 10 60 35 C50 45 40 35 40 35 Z" fill="#f472b6" />
-        </svg>
-
-        <svg className="w-48 h-72 sm:w-64 sm:h-96 text-rose-400 fill-current" viewBox="0 0 100 150">
-          <path d="M50 150 Q50 70 50 30" stroke="currentColor" strokeWidth="4" fill="none" />
-          <path d="M50 30 C25 0 15 35 30 55 C40 65 50 30 50 30 Z" />
-          <path d="M50 30 C75 0 85 35 70 55 C60 65 50 30 50 30 Z" />
-          <path d="M38 25 C38 0 62 0 62 25 C50 35 38 25 38 25 Z" fill="#fb7185" />
-        </svg>
-      </div>
+    <div className="relative min-h-screen bg-gradient-to-br from-[#120309] via-[#2d0a1b] to-[#120309] text-white p-3 sm:p-6 md:p-8 overflow-hidden font-sans flex flex-col justify-between">
+      <AmbientBackground withTulips />
 
       <div className="relative z-10 max-w-6xl mx-auto w-full">
         {/* Header */}
-        <header className="flex flex-row justify-between items-center mb-6 gap-2 border-b border-pink-900/50 pb-4">
-          <h1 className="text-xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-pink-200 to-rose-300 bg-clip-text text-transparent">
-            Álbum de Recuerdos 📸🌷
-          </h1>
-          <div className="flex items-center gap-1.5 bg-[#220716]/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-pink-500/20 shadow-sm text-xs sm:text-sm text-pink-200 font-medium">
-            <span>Nuestra Historia, Laurita</span>
-            <span className="text-rose-400">♥</span>
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3 border-b border-pink-900/50 pb-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-pink-200 via-rose-300 to-purple-200 bg-clip-text text-transparent">
+              Álbum de Recuerdos 📸✨
+            </h1>
+            <p className="text-xs text-pink-300/70 mt-0.5">
+              Gestión de fotos y momentos especiales
+            </p>
           </div>
+
+          <button
+            onClick={() => setModalNuevoAbierto(true)}
+            className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold rounded-xl text-xs sm:text-sm shadow-lg shadow-pink-950/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+          >
+            <span>+</span>
+            <span>Agregar Recuerdo</span>
+          </button>
         </header>
 
-        {/* Filtros por Categoría */}
-        <div className="flex gap-2 overflow-x-auto pb-4 mb-4 no-scrollbar">
-          {categorias.map((cat) => {
-            const isActive = categoriaActiva === cat;
-            return (
-              <button
-                key={cat}
-                onClick={() => setCategoriaActiva(cat)}
-                className={`py-2 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all text-center whitespace-nowrap ${
-                  isActive
-                    ? 'bg-pink-600 text-white shadow-md shadow-pink-900/50'
-                    : 'bg-[#220716]/60 text-pink-300/80 hover:bg-[#220716] border border-pink-500/10'
-                }`}
-              >
-                {cat}
-              </button>
-            );
-          })}
+        {/* Categorías */}
+        <div className="flex gap-2 overflow-x-auto pb-3 mb-4 no-scrollbar">
+          {categoriasAlbum.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setCategoriaActiva(cat)}
+              className={`py-1.5 px-3.5 rounded-xl text-xs sm:text-sm font-semibold transition-all text-center whitespace-nowrap cursor-pointer ${
+                categoriaActiva === cat
+                  ? 'bg-pink-600 text-white shadow-md shadow-pink-900/50'
+                  : 'bg-[#220716]/60 text-pink-300/80 hover:bg-[#220716] border border-pink-500/10'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
         </div>
 
-        {/* Grid Estilo Álbum Polaroid */}
-        <main className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {/* Grid Polaroid */}
+        <main className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 mb-8">
           {recuerdosFiltrados.map((recuerdo) => (
             <div
               key={recuerdo.id}
               onClick={() => setRecuerdoSeleccionado(recuerdo)}
               className="group cursor-pointer bg-[#1c0612]/80 backdrop-blur-md border border-pink-500/20 hover:border-pink-400/60 rounded-3xl p-4 shadow-xl hover:shadow-pink-900/30 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between relative overflow-hidden"
             >
-              {/* Marco estilo Foto Vintage / Polaroid */}
               <div className="w-full aspect-[4/3] bg-gradient-to-br from-[#2e0b1f] to-[#1a0410] rounded-2xl border border-pink-500/20 flex flex-col items-center justify-center relative overflow-hidden mb-4 group-hover:scale-[1.02] transition-transform">
                 {recuerdo.imagenUrl ? (
                   <img
@@ -145,65 +194,66 @@ export default function AlbumPage() {
                 ) : (
                   <div className="text-center p-4">
                     <span className="text-4xl mb-2 block">{recuerdo.emojis}</span>
-                    <span className="text-xs text-pink-300/60 font-mono">
-                      [Foto del Recuerdo]
-                    </span>
+                    <span className="text-[11px] text-pink-300/60 font-mono">[Momento Especial]</span>
                   </div>
                 )}
-                {/* Sello de Fecha */}
                 <span className="absolute bottom-2 right-2 bg-[#120309]/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-mono text-pink-300 border border-pink-500/20">
                   {recuerdo.fecha}
                 </span>
               </div>
 
-              {/* Detalles del Recuerdo */}
               <div>
                 <div className="flex justify-between items-start mb-1">
-                  <h3 className="font-bold text-base text-pink-100 group-hover:text-pink-300 transition-colors">
+                  <h3 className="font-bold text-sm sm:text-base text-pink-100 group-hover:text-pink-300 transition-colors line-clamp-1">
                     {recuerdo.titulo}
                   </h3>
-                  <span className="text-xs bg-pink-900/40 border border-pink-500/30 text-pink-200 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] bg-pink-900/40 border border-pink-500/30 text-pink-200 px-2 py-0.5 rounded-full shrink-0 ml-1">
                     {recuerdo.categoria}
                   </span>
                 </div>
-                <p className="text-xs text-pink-200/70 line-clamp-2 mt-2 leading-relaxed">
+                <p className="text-xs text-pink-200/70 line-clamp-2 mt-1.5 leading-relaxed">
                   {recuerdo.descripcion}
                 </p>
               </div>
 
-              {recuerdo.notaAmor && (
-                <div className="mt-3 pt-3 border-t border-pink-500/20 flex items-center gap-1.5 text-[11px] text-rose-300 font-medium italic">
-                  <span>🌷</span>
-                  <span className="truncate">{recuerdo.notaAmor}</span>
-                </div>
-              )}
+              <div className="mt-3 pt-2.5 border-t border-pink-500/15 flex items-center justify-between text-[11px]">
+                <AuthorBadge author={recuerdo.author} prefix="Recuerdo de" />
+                {recuerdo.notaAmor && (
+                  <span className="truncate text-rose-300/80 italic max-w-[140px]">
+                    "{recuerdo.notaAmor}"
+                  </span>
+                )}
+              </div>
             </div>
           ))}
         </main>
       </div>
 
-      {/* Modal / Pop-up para ver detalle del recuerdo */}
+      {/* Modal detalle recuerdo */}
       {recuerdoSeleccionado && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-gradient-to-br from-[#2a0818] to-[#120309] border border-pink-500/40 rounded-3xl p-6 max-w-lg w-full shadow-2xl relative text-white">
             <button
               onClick={() => setRecuerdoSeleccionado(null)}
-              className="absolute top-4 right-4 text-pink-300 hover:text-white bg-pink-950/60 p-2 rounded-full border border-pink-500/20 transition-colors"
+              className="absolute top-4 right-4 text-pink-300 hover:text-white bg-pink-950/60 p-2 rounded-full border border-pink-500/20 cursor-pointer"
             >
               ✕
             </button>
 
             <div className="text-center mb-4">
               <span className="text-5xl block mb-2">{recuerdoSeleccionado.emojis}</span>
-              <span className="text-xs font-mono text-pink-400 bg-pink-950/60 px-3 py-1 rounded-full border border-pink-500/30">
-                {recuerdoSeleccionado.fecha}
-              </span>
-              <h2 className="text-2xl font-bold mt-2 text-pink-100">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <span className="text-xs font-mono text-pink-400 bg-pink-950/60 px-3 py-1 rounded-full border border-pink-500/30">
+                  {recuerdoSeleccionado.fecha}
+                </span>
+                <AuthorBadge author={recuerdoSeleccionado.author} prefix="Por" />
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold mt-1 text-pink-100">
                 {recuerdoSeleccionado.titulo}
               </h2>
             </div>
 
-            <p className="text-sm text-pink-200/90 leading-relaxed mb-6 bg-[#1a0511]/80 p-4 rounded-2xl border border-pink-500/20">
+            <p className="text-xs sm:text-sm text-pink-200/90 leading-relaxed mb-6 bg-[#1a0511]/80 p-4 rounded-2xl border border-pink-500/20">
               {recuerdoSeleccionado.descripcion}
             </p>
 
@@ -215,7 +265,7 @@ export default function AlbumPage() {
 
             <button
               onClick={() => setRecuerdoSeleccionado(null)}
-              className="w-full mt-6 py-3 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-xl text-sm transition shadow-lg shadow-pink-900/50"
+              className="w-full mt-6 py-3 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-xl text-xs sm:text-sm transition shadow-lg shadow-pink-900/50 cursor-pointer"
             >
               Cerrar recuerdo ✨
             </button>
@@ -223,15 +273,119 @@ export default function AlbumPage() {
         </div>
       )}
 
-      {/* Botón Volver */}
-      <div className="relative z-10 max-w-6xl mx-auto w-full mt-2">
-        <Link
-          href="/dashboard"
-          className="w-full py-3.5 bg-slate-950/50 hover:bg-slate-950/80 text-pink-200/80 font-semibold rounded-2xl text-sm border border-pink-500/20 transition backdrop-blur-md flex items-center justify-center"
-        >
-          Volver al panel principal
-        </Link>
-      </div>
+      {/* Modal nuevo recuerdo */}
+      {modalNuevoAbierto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-gradient-to-br from-[#220716] to-[#120309] border border-pink-500/40 rounded-3xl p-5 sm:p-7 max-w-lg w-full shadow-2xl relative text-white my-8">
+            <button
+              onClick={() => setModalNuevoAbierto(false)}
+              className="absolute top-4 right-4 text-pink-300 hover:text-white bg-pink-950/60 p-2 rounded-full border border-pink-500/20 cursor-pointer"
+            >
+              ✕
+            </button>
+
+            <h2 className="text-xl font-bold text-white mb-1">Nuevo Recuerdo ✨</h2>
+            <p className="text-xs text-pink-200/60 mb-4">
+              Agregando como: <span className="text-white font-semibold underline">{currentUser.displayName}</span>
+            </p>
+
+            <form onSubmit={handleGuardarRecuerdo} className="space-y-3.5 text-xs sm:text-sm">
+              <div>
+                <label className="block text-xs font-medium text-pink-200/80 mb-1">Título del recuerdo</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej: Nuestra tarde de café"
+                  value={nuevoTitulo}
+                  onChange={(e) => setNuevoTitulo(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900/80 border border-pink-500/20 focus:border-pink-500 text-white focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-xs font-medium text-pink-200/80 mb-1">Fecha</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: 14 de Febrero, 2024"
+                    value={nuevaFecha}
+                    onChange={(e) => setNuevaFecha(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900/80 border border-pink-500/20 focus:border-pink-500 text-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-pink-200/80 mb-1">Categoría</label>
+                  <select
+                    value={nuevaCategoria}
+                    onChange={(e) => setNuevaCategoria(e.target.value as CategoriaRecuerdo)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900/80 border border-pink-500/20 focus:border-pink-500 text-white focus:outline-none"
+                  >
+                    <option value="Momentos">Momentos</option>
+                    <option value="Citas">Citas</option>
+                    <option value="Viajes">Viajes</option>
+                    <option value="Especiales">Especiales</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-xs font-medium text-pink-200/80 mb-1">Emojis</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: ☕🌹"
+                    value={nuevosEmojis}
+                    onChange={(e) => setNuevosEmojis(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900/80 border border-pink-500/20 focus:border-pink-500 text-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-pink-200/80 mb-1">URL de Imagen (Opcional)</label>
+                  <input
+                    type="text"
+                    placeholder="https://..."
+                    value={nuevaImagenUrl}
+                    onChange={(e) => setNuevaImagenUrl(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900/80 border border-pink-500/20 focus:border-pink-500 text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-pink-200/80 mb-1">Historia o Descripción</label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="¿Qué ocurrió en este momento tan bonito?"
+                  value={nuevaDescripcion}
+                  onChange={(e) => setNuevaDescripcion(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900/80 border border-pink-500/20 focus:border-pink-500 text-white focus:outline-none resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-pink-200/80 mb-1">Nota de Amor (Opcional)</label>
+                <input
+                  type="text"
+                  placeholder="Ej: Tu sonrisa iluminó todo..."
+                  value={nuevaNotaAmor}
+                  onChange={(e) => setNuevaNotaAmor(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900/80 border border-pink-500/20 focus:border-pink-500 text-white focus:outline-none"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 mt-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold rounded-xl text-xs sm:text-sm shadow-lg shadow-pink-950/50 cursor-pointer"
+              >
+                Guardar Recuerdo en el Álbum ✨
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <BackButton />
     </div>
   );
 }

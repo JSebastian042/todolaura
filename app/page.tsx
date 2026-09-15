@@ -1,10 +1,13 @@
 'use client';
+
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { LAURA_PIN, SEBASTIAN_PIN, UserRole } from '@/app/types/auth';
 
 export default function Login() {
   const [pin, setPin] = useState<string>('');
   const [error, setError] = useState<boolean>(false);
+  const [welcomeUser, setWelcomeUser] = useState<UserRole | null>(null);
   const router = useRouter();
 
   const handleKeyPress = useCallback((num: string) => {
@@ -12,8 +15,16 @@ export default function Login() {
       if (prevPin.length < 4) {
         const newPin = prevPin + num;
         if (newPin.length === 4) {
-          if (newPin === '1904') {
-            setTimeout(() => router.push('/dashboard'), 300);
+          if (newPin === LAURA_PIN) {
+            setWelcomeUser('laura');
+            sessionStorage.setItem('todolaura_unlocked', 'true');
+            sessionStorage.setItem('todolaura_user', 'laura');
+            setTimeout(() => router.push('/dashboard'), 600);
+          } else if (newPin === SEBASTIAN_PIN) {
+            setWelcomeUser('sebastian');
+            sessionStorage.setItem('todolaura_unlocked', 'true');
+            sessionStorage.setItem('todolaura_user', 'sebastian');
+            setTimeout(() => router.push('/dashboard'), 600);
           } else {
             setError(true);
             setTimeout(() => {
@@ -90,9 +101,19 @@ export default function Login() {
           ))}
         </div>
 
-        {/* Mensaje de error */}
+        {/* Mensaje de estado / bienvenida */}
         <div className="h-6 mb-2 flex items-center justify-center">
-          {error && <p className="text-red-400 text-xs font-semibold tracking-wide">Contraseña incorrecta</p>}
+          {error && <p className="text-red-400 text-xs font-semibold tracking-wide animate-shake">Contraseña incorrecta</p>}
+          {welcomeUser === 'laura' && (
+            <p className="text-pink-300 text-xs font-bold tracking-wide animate-pulse">
+              ¡Bienvenida mi reina Laura! 💖
+            </p>
+          )}
+          {welcomeUser === 'sebastian' && (
+            <p className="text-purple-300 text-xs font-bold tracking-wide animate-pulse">
+              ¡Bienvenido Sebas! ✨
+            </p>
+          )}
         </div>
 
         {/* Teclado numérico */}

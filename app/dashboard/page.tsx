@@ -1,18 +1,27 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getActiveUser, USERS, UserProfile } from '@/app/types/auth';
+import AmbientBackground from '@/app/components/common/AmbientBackground';
 
 export default function DashboardPage() {
   const [mensajeProximamente, setMensajeProximamente] = useState(false);
+  const [currentUser, setCurrentUser] = useState<UserProfile>(USERS.laura);
+
+  useEffect(() => {
+    setCurrentUser(getActiveUser());
+  }, []);
 
   const handleAlbumClick = (e: React.MouseEvent) => {
     e.preventDefault();
     setMensajeProximamente(true);
     setTimeout(() => {
       setMensajeProximamente(false);
-    }, 3000);
+    }, 4000);
   };
+
+  const isLaura = currentUser.id === 'laura';
 
   const modulos = [
     {
@@ -80,39 +89,54 @@ export default function DashboardPage() {
     },
     {
       titulo: 'Álbum de Recuerdos',
-      descripcion: 'Nuestra historia guardada en fotos (Próximamente)',
+      descripcion: isLaura ? 'Nuestra historia guardada en fotos (Próximamente)' : 'Nuestra historia guardada en fotos',
       icono: '📸',
-      href: '#',
-      colorGradient: 'from-rose-900/20 to-pink-950/10 border-rose-500/20 text-rose-300/70',
-      hoverGlow: 'hover:shadow-none',
-      isBlocked: true,
+      href: isLaura ? '#' : '/dashboard/album',
+      colorGradient: isLaura ? 'from-rose-900/20 to-pink-950/10 border-rose-500/20 text-rose-300/70' : 'from-rose-500/20 to-pink-500/10 border-rose-400/30 text-rose-200',
+      hoverGlow: isLaura ? 'hover:shadow-none' : 'hover:shadow-[0_0_25px_rgba(244,63,94,0.3)]',
+      isBlocked: isLaura,
     },
   ];
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-rose-950 to-pink-950 flex flex-col items-center justify-center p-4 sm:p-8 select-none relative overflow-hidden">
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 sm:w-[500px] h-96 sm:h-[500px] bg-pink-500/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-72 sm:w-96 h-72 sm:h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+      <AmbientBackground />
 
-      {/* Mensaje flotante cuando toca Álbum */}
+      {/* Mensaje flotante cuando Laura toca Álbum */}
       {mensajeProximamente && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-rose-950/95 border border-pink-500/50 text-pink-200 px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-md flex items-center gap-2 animate-bounce text-xs sm:text-sm font-semibold text-center max-w-[90vw]">
+        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-rose-950/95 border border-pink-500/50 text-pink-200 px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-md flex items-center gap-2 animate-bounce text-xs sm:text-sm font-semibold text-center max-w-[90vw]">
           <span>🔒</span>
-          <span>¡Próximamente disponible! Un rinconcito especial en construcción 🌷</span>
+          <span>¡Opción secreta! No la podrás ver hasta que nos veamos por primera vez 🌷</span>
         </div>
       )}
 
-      <div className="relative max-w-4xl w-full flex flex-col items-center py-8">
-        <div className="text-center mb-10 sm:mb-14">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-300 text-xs sm:text-sm font-medium mb-4 backdrop-blur-md">
-            <span>💖</span> Un rincón especial para ti
-          </div>
-          <h1 className="text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-rose-100 to-pink-400 tracking-tight drop-shadow-sm">
-            Para Laura
-          </h1>
-          <p className="text-pink-200/70 text-sm sm:text-base mt-3 max-w-md mx-auto font-light">
-            Selecciona una tarjeta para explorar el contenido que preparé con mucho cariño.
-          </p>
+      <div className="relative max-w-4xl w-full flex flex-col items-center py-6 sm:py-8">
+        <div className="text-center mb-8 sm:mb-12">
+          {isLaura ? (
+            <>
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-300 text-xs sm:text-sm font-medium mb-3 backdrop-blur-md">
+                <span>💖</span> Un rincón especial para ti
+              </div>
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-rose-100 to-pink-400 tracking-tight drop-shadow-sm px-2">
+                Para Laura
+              </h1>
+              <p className="text-pink-200/90 text-sm sm:text-base mt-3 max-w-lg mx-auto font-medium leading-relaxed px-4">
+                Bienvenida Laura, quiero que sepas que te amo 💖
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs sm:text-sm font-medium mb-3 backdrop-blur-md">
+                <span>✨</span> Modo Creador
+              </div>
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-pink-200 to-indigo-300 tracking-tight drop-shadow-sm px-2">
+                Panel de Sebas ✨
+              </h1>
+              <p className="text-purple-200/80 text-sm sm:text-base mt-3 max-w-lg mx-auto font-light leading-relaxed px-4">
+                Aquí puedes gestionar y alimentar todos los recuerdos, notas y detalles para Laura.
+              </p>
+            </>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 w-full px-2 sm:px-0">

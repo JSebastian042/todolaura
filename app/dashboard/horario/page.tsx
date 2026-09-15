@@ -1,105 +1,22 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
-
-interface Asignatura {
-  id: string;
-  nombre: string;
-  codigo: string;
-  grupo: string;
-  dia: 'Lunes' | 'Martes' | 'Miércoles' | 'Jueves' | 'Viernes';
-  horaInicio: number;
-  duracionHoras: number;
-  icono: string;
-}
-
-const materias: Asignatura[] = [
-  {
-    id: '1',
-    nombre: 'Habilidades para la vida',
-    codigo: '603032C',
-    grupo: '01',
-    dia: 'Lunes',
-    horaInicio: 10,
-    duracionHoras: 3,
-    icono: '📖',
-  },
-  {
-    id: '2',
-    nombre: 'Literatura Afrolatinoamericana',
-    codigo: '202007C',
-    grupo: '2',
-    dia: 'Lunes',
-    horaInicio: 15,
-    duracionHoras: 3,
-    icono: '✨',
-  },
-  {
-    id: '3',
-    nombre: 'Didáctica de la lengua y la literatura',
-    codigo: '202009C',
-    grupo: '2',
-    dia: 'Martes',
-    horaInicio: 15,
-    duracionHoras: 3,
-    icono: '🎵',
-  },
-  {
-    id: '4',
-    nombre: 'Seminario Taller de métodos Literarios I',
-    codigo: '202010C',
-    grupo: '1',
-    dia: 'Miércoles',
-    horaInicio: 15,
-    duracionHoras: 3,
-    icono: '🌷',
-  },
-  {
-    id: '5',
-    nombre: 'Géneros discursivos y tipologías textuales',
-    codigo: '202008C',
-    grupo: '2',
-    dia: 'Viernes',
-    horaInicio: 15,
-    duracionHoras: 3,
-    icono: '💌',
-  },
-];
-
-const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'] as const;
-const horas = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+import { diasSemana, horasTimeline, materias } from '@/app/data/schedule';
+import AmbientBackground from '@/app/components/common/AmbientBackground';
+import BackButton from '@/app/components/common/BackButton';
 
 export default function HorarioPage() {
   const [diaSeleccionado, setDiaSeleccionado] = useState<string>('Lunes');
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-[#120309] via-[#2d0a1b] to-[#120309] text-white p-4 md:p-8 overflow-hidden font-sans flex flex-col justify-between">
-      
-      {/* Fondo con Decoración de Tulipanes Ilustrados */}
-      <div className="absolute inset-0 pointer-events-none opacity-30 flex justify-between items-end px-4">
-        <svg className="w-36 h-56 sm:w-56 sm:h-80 text-pink-500 fill-current" viewBox="0 0 100 150">
-          <path d="M50 150 Q50 100 30 80 Q10 100 10 130 C10 150 40 150 50 150 Z" opacity="0.4" />
-          <path d="M50 150 Q50 90 70 70 Q90 90 90 120 C90 150 60 150 50 150 Z" opacity="0.4" />
-          <path d="M50 150 Q50 80 50 40" stroke="currentColor" strokeWidth="4" fill="none" />
-          <path d="M50 40 C30 10 20 40 35 60 C45 70 50 40 50 40 Z" />
-          <path d="M50 40 C70 10 80 40 65 60 C55 70 50 40 50 40 Z" />
-          <path d="M40 35 C40 10 60 10 60 35 C50 45 40 35 40 35 Z" fill="#f472b6" />
-        </svg>
-
-        <svg className="w-48 h-72 sm:w-64 sm:h-96 text-rose-400 fill-current" viewBox="0 0 100 150">
-          <path d="M50 150 Q50 70 50 30" stroke="currentColor" strokeWidth="4" fill="none" />
-          <path d="M50 30 C25 0 15 35 30 55 C40 65 50 30 50 30 Z" />
-          <path d="M50 30 C75 0 85 35 70 55 C60 65 50 30 50 30 Z" />
-          <path d="M38 25 C38 0 62 0 62 25 C50 35 38 25 38 25 Z" fill="#fb7185" />
-        </svg>
-      </div>
+      <AmbientBackground withTulips />
 
       <div className="relative z-10 max-w-6xl mx-auto w-full">
         {/* Header */}
         <header className="flex flex-row justify-between items-center mb-6 gap-2 border-b border-pink-900/50 pb-4">
           <h1 className="text-xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-pink-200 to-rose-300 bg-clip-text text-transparent">
-            Horario 🌷
+            Horario de Clases 🌷
           </h1>
           <div className="flex items-center gap-1.5 bg-[#220716]/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-pink-500/20 shadow-sm text-xs sm:text-sm text-pink-200 font-medium">
             <span>Hola Laurita, este es tu horario</span>
@@ -116,7 +33,7 @@ export default function HorarioPage() {
                 <button
                   key={dia}
                   onClick={() => setDiaSeleccionado(dia)}
-                  className={`flex-1 min-w-[70px] py-2 px-3 rounded-xl text-xs font-bold transition-all text-center ${
+                  className={`flex-1 min-w-[70px] py-2 px-3 rounded-xl text-xs font-bold transition-all text-center cursor-pointer ${
                     isActive
                       ? 'bg-pink-600 text-white shadow-md shadow-pink-900/50'
                       : 'bg-[#220716]/60 text-pink-300/80 hover:bg-[#220716] border border-pink-500/10'
@@ -160,16 +77,15 @@ export default function HorarioPage() {
           </div>
         </div>
 
-        {/* --- VISTA ESCRITORIO (Grid Completo Semanal) --- */}
+        {/* --- VISTA ESCRITORIO (Grid Semanal) --- */}
         <main className="hidden md:block bg-[#1a0511]/70 backdrop-blur-xl border border-pink-500/20 rounded-3xl p-6 shadow-2xl mb-6">
           <div className="grid grid-cols-6 gap-2">
-            
             {/* Columna Horas */}
             <div className="flex flex-col">
               <div className="h-12 flex items-center justify-center text-xs font-bold text-pink-300/60 uppercase tracking-wider">
                 Hora
               </div>
-              {horas.map((hora) => (
+              {horasTimeline.map((hora) => (
                 <div key={hora} className="h-16 border-t border-pink-900/30 flex items-center justify-center text-xs font-semibold text-pink-200/50">
                   {`${hora}:00`}
                 </div>
@@ -183,7 +99,7 @@ export default function HorarioPage() {
                   <span className="font-bold text-sm text-pink-200">{dia}</span>
                 </div>
 
-                {horas.map((hora) => (
+                {horasTimeline.map((hora) => (
                   <div key={hora} className="h-16 border-t border-pink-900/20 w-full" />
                 ))}
 
@@ -222,15 +138,7 @@ export default function HorarioPage() {
         </main>
       </div>
 
-      {/* Botón Volver */}
-      <div className="relative z-10 max-w-6xl mx-auto w-full mt-2">
-        <Link
-          href="/dashboard"
-          className="w-full py-3.5 bg-slate-950/50 hover:bg-slate-950/80 text-pink-200/80 font-semibold rounded-2xl text-sm border border-pink-500/20 transition backdrop-blur-md flex items-center justify-center"
-        >
-          Volver al panel principal
-        </Link>
-      </div>
+      <BackButton />
     </div>
   );
 }
