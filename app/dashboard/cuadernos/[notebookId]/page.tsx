@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -67,6 +67,7 @@ export default function NotebookDetailPage() {
   const [entries, setEntries] = useState<NotebookEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [textInput, setTextInput] = useState<string>('');
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Modales multimedia
   const [showRecorder, setShowRecorder] = useState<boolean>(false);
@@ -188,14 +189,60 @@ export default function NotebookDetailPage() {
 
     // Resetear estados
     setTextInput('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
     setShowRecorder(false);
     setShowUploader(false);
   };
 
-  const handleSendText = (e: React.FormEvent) => {
-    e.preventDefault();
+  const adjustTextareaHeight = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      const scrollHeight = textareaRef.current.scrollHeight;
+      textareaRef.current.style.height = `${Math.min(Math.max(scrollHeight, 42), 160)}px`;
+    }
+  };
+
+  const handleSendText = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!textInput.trim()) return;
     handleAddEntry('text', textInput.trim());
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+
+    if (e.key === 'Enter') {
+      if (e.ctrlKey || e.shiftKey) {
+        // En PC o teclado físico, Ctrl+Enter o Shift+Enter inserta un salto de línea/párrafo
+        e.preventDefault();
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const value = textarea.value;
+        const newValue = value.substring(0, start) + '\n' + value.substring(end);
+
+        setTextInput(newValue);
+
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = start + 1;
+          adjustTextareaHeight();
+        }, 0);
+      } else if (!isTouchDevice) {
+        // En computador (desktop), Enter simple envía la nota directamente
+        e.preventDefault();
+        handleSendText();
+      }
+      // En celular táctil, Enter simple hace el salto de línea por defecto
+    }
+  };
+
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setTextInput(e.target.value);
+    adjustTextareaHeight();
   };
 
   const handleDeleteEntry = async (id: string) => {
@@ -491,7 +538,7 @@ export default function NotebookDetailPage() {
 
           {/* Barra principal de entrada de texto y botones rápidos */}
           {!showRecorder && !showUploader && (
-            <form onSubmit={handleSendText} className="flex items-center gap-2 w-full">
+            <form onSubmit={handleSendText} className="flex items-end gap-2 w-full">
               {/* Botón de Foto */}
               <button
                 type="button"
@@ -512,13 +559,16 @@ export default function NotebookDetailPage() {
                 <Mic className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
 
-              {/* Input de texto */}
-              <input
-                type="text"
+              {/* Área de texto auto-expandible */}
+              <textarea
+                ref={textareaRef}
+                rows={1}
                 value={textInput}
-                onChange={(e) => setTextInput(e.target.value)}
-                placeholder="¿Qué hiciste hoy? Escribe aquí..."
-                className="flex-1 px-4 py-2.5 sm:py-3 rounded-2xl bg-white/10 border border-white/15 focus:border-pink-500/70 text-xs sm:text-sm text-white placeholder:text-white/40 focus:outline-none transition"
+                onChange={handleTextChange}
+                onKeyDown={handleKeyDown}
+                placeholder="¿Qué hiciste hoy? Escribe aquí... (Ctrl+Enter para salto)"
+                className="flex-1 px-4 py-2.5 sm:py-3 rounded-2xl bg-white/10 border border-white/15 focus:border-pink-500/70 text-xs sm:text-sm text-white placeholder:text-white/40 focus:outline-none transition-all resize-none max-h-36 overflow-y-auto leading-relaxed"
+                style={{ minHeight: '42px' }}
               />
 
               {/* Botón de Enviar */}
@@ -532,7 +582,7 @@ export default function NotebookDetailPage() {
                       : 'bg-gradient-to-r from-pink-600 to-rose-600 hover:brightness-110 shadow-pink-950/50'
                     : 'bg-white/10 text-white/30 cursor-not-allowed'
                 }`}
-                title="Enviar nota de texto"
+                title="Enviar nota (Enter)"
               >
                 <Send className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>

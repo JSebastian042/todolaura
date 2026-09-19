@@ -81,4 +81,12 @@ export const cancionesFavoritas: Cancion[] = [
     portada: '/portada/mirlos.jpg',
     audio: '/musica/mirlos.mp3',
   },
+  {
+    id: 11,
+    titulo: 'Compartir',
+    artista: 'Carla Morrinson',
+    album: 'Mientras tú dormías...',
+    portada: '/portada/compartir.png',
+    audio: '/musica/Compartir.mp3',
+  },
 ];

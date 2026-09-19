@@ -40,6 +40,8 @@ export const frases: Frase[] = [
     autor: "Vincent Van Gogh",
     imagen: "/autores/Vincent.jpg",
   },
+
+  
   // José Asunción Silva
   {
     id: 7,
@@ -65,5 +67,17 @@ export const frases: Frase[] = [
     texto: "El punto de inflexión en la vida es la comprensión de que todo está por venir.",
     autor: "Franz Kafka",
     imagen: "/autores/Franz.jpg",
+  },
+  {
+    id: 11,
+    texto: "No sé cómo abarcar toda esta dicha en palabras, ojos, manos y este corazón. No sé cómo abarcar la felicidad de tenerte aquí, la alegría de que me pertenezcas. No solo te amo a ti, es más de lo que amo: amo la existencia que tú me otorgas.",
+    autor: "Franz Kafka",
+    imagen: "/autores/Franz.jpg",
+  },
+   {
+    id: 12,
+    texto: "No es que muera de amor, muero de ti. Muero de ti, amor, de amor de ti, de urgencia mía de mi piel de ti, de mi alma, de ti y de mi boca y del insoportable que yo soy sin ti.",
+    autor: "Jaime Sabines",
+    imagen: "/autores/jaime.jpg",
   },
 ];
