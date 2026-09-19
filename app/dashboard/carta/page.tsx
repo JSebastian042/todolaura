@@ -34,19 +34,19 @@ export default function CartaPage() {
           </p>
 
           <p>
-            Hoy es el cuarto despliegue de TodoLaura mi amor, ahora ya está la posibilidad de diferenciarnos mediante un código (tú tienes el tuyo y yo tengo el mio) así sabremos quien puso qué cosa
+            Hoy es el quinto despliegue de TodoLaura mi vida, ya están las agenditas y también solucioné lo de la diferenciación de perfiles.
           </p>
 
           <p>
-            Laura poco a poco se va acercando el día en el cual nos veremos en persona, he de admitir que la idea me da un poco de nerviosismo porque quiero que salga todo bien ese anhelado día
+            Hoy fue un día raro para mi, te vi muy angustiada por la situación escolar que decidí tomar acción y poder ayudarnos de esta manera, sé que lo más importante es que tengas la disposición pero me gustaría ayudarte de esta manera... Ayudarte creando una parte donde puedas colocar las cosas de la semana que necesites para estar pendiente que las hagas.
           </p>
 
           <p>
-            No te he dicho porque prefiero no "asustarte" pero he soñado mucho con esa primera vez, con la primera vez en la que nos podremos mirar a los ojos y tan solo decirnos "Hola", es algo tan sorprendente que a veces no me cabe en la cabeza que eso pasará. Quiero que sepas que desde esa primera vez vendrán muchas más veces, verás como todo lo que hemos soñado por chat se convertirá en realidad con ayuda tuya y mía mi amor. Te amo mucho, nunca lo olvides
+            Laura ayer me puse un poco sentimental cuando me dijiste que era incondicional (al igual que hoy) quiero serlo contigo siempre, eres mi novia y eres la mujer que amo entonces no tengo complicaciones en ser tierno SOLAMENTE CONTIGO y con nadie más mi mujer bonita.
           </p>
 
           <p>
-            Posdata: El mismo anuncio parroquial de siempre, si quieres alguna otra cosita me avisas que yo con mucho gusto lo hago Laurita, todo lo que sea por ti mi reina preciosa, mi razón, la persona que quiero así y la mujer con la que quiero estar el resto de mi vida, la mujer que amo, que me desespera cada vez que no está. Mi todo 
+            Posdata: La misma canción de todas las cartas, si quieres alguna otra cosita me avisas que yo con mucho gusto lo hago Laurita, todo lo que sea por ti mi reina preciosa, mi razón, la persona que quiero así, la mujer con la que quiero estar el resto de mi vida, la mujer que amo, que me desespera cada vez que no está, la mujer de mis ojos, mi todo y por sobre todas las cosas El amor de mi vida
           </p>
 
           <p className="pt-4 font-semibold text-right text-amber-900">

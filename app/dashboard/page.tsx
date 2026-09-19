@@ -88,6 +88,15 @@ export default function DashboardPage() {
       isBlocked: false,
     },
     {
+      titulo: 'Cuadernos',
+      descripcion: 'Nuestras libretas de la semana, notas y audios',
+      icono: '📒',
+      href: '/dashboard/cuadernos',
+      colorGradient: 'from-amber-500/20 to-pink-500/10 border-amber-400/30 text-amber-200',
+      hoverGlow: 'hover:shadow-[0_0_25px_rgba(245,158,11,0.3)]',
+      isBlocked: false,
+    },
+    {
       titulo: 'Álbum de Recuerdos',
       descripcion: isLaura ? 'Nuestra historia guardada en fotos (Próximamente)' : 'Nuestra historia guardada en fotos',
       icono: '📸',
