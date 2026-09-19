@@ -25,7 +25,7 @@ export default function CalendarDashboard() {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<UserProfile>(USERS.laura);
+  const [currentUser, setCurrentUser] = useState<UserProfile>(() => getActiveUser());
 
   const fetchReminders = async () => {
     setLoading(true);
@@ -58,35 +58,25 @@ export default function CalendarDashboard() {
     e.preventDefault();
     if (!reminderInput.trim() || !selectedDate) return;
 
-    const newReminder: Record<string, any> = {
+    const active = getActiveUser();
+
+    const newReminder = {
       date: selectedDate,
       text: reminderInput.trim(),
-      author: currentUser.name,
+      author: active.displayName,
     };
 
-    let { data, error } = await supabase
+    const { data, error } = await supabase
       .from('reminders')
       .insert([newReminder])
       .select();
 
-    // Fallback si la columna author aún no se ha agregado en Supabase
-    if (error && (error.code === '42703' || error.message?.includes('author'))) {
-      delete newReminder.author;
-      const retry = await supabase.from('reminders').insert([newReminder]).select();
-      data = retry.data;
-      error = retry.error;
-    }
-
     if (error) {
       console.error('Error insertando en Supabase:', error.message);
       setErrorMsg('No se pudo guardar el recordatorio en Supabase.');
-    } else if (data) {
+    } else if (data && data[0]) {
       setErrorMsg(null);
-      const createdReminder: Reminder = {
-        ...data[0],
-        author: currentUser.name,
-      };
-      setReminders((prev) => [...prev, createdReminder]);
+      setReminders((prev) => [...prev, data[0]]);
       setReminderInput('');
     }
   };

@@ -16,7 +16,7 @@ export default function DiccionarioPage() {
   const [nuevoSignificado, setNuevoSignificado] = useState('');
   const [cargando, setCargando] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<UserProfile>(USERS.laura);
+  const [currentUser, setCurrentUser] = useState<UserProfile>(() => getActiveUser());
 
   // 1. Cargar las palabras guardadas desde Supabase al entrar
   const cargarTerminos = async () => {
@@ -36,7 +36,7 @@ export default function DiccionarioPage() {
         palabra: item.word,
         significado: item.meaning,
         categoria: item.category,
-        author: item.author || (item.category === 'REACCIÓN' ? 'Sebastián' : 'Laura'),
+        author: item.author || 'Laura',
       }));
       setTerminos(terminosMapeados);
     }
@@ -55,42 +55,36 @@ export default function DiccionarioPage() {
       item.significado.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  // 3. Insertar la nueva palabra con fallback seguro
+  // 3. Insertar la nueva palabra con autor verificado
   const agregarTermino = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nuevaPalabra.trim() || !nuevoSignificado.trim()) return;
 
-    const nuevaEntradaBD: Record<string, any> = {
+    const active = getActiveUser();
+
+    const nuevaEntradaBD = {
       word: nuevaPalabra.trim(),
       meaning: nuevoSignificado.trim(),
       category: 'Personalizado',
-      author: currentUser.name,
+      author: active.displayName,
     };
 
-    let { data, error } = await supabase
+    const { data, error } = await supabase
       .from('dictionary')
       .insert([nuevaEntradaBD])
       .select();
 
-    // Fallback si la columna author aún no se ha agregado en Supabase
-    if (error && (error.code === '42703' || error.message?.includes('author'))) {
-      delete nuevaEntradaBD.author;
-      const retry = await supabase.from('dictionary').insert([nuevaEntradaBD]).select();
-      data = retry.data;
-      error = retry.error;
-    }
-
     if (error) {
       console.error('Error al insertar en Supabase:', error.message);
       setErrorMsg('No se pudo guardar la palabra en Supabase.');
-    } else if (data) {
+    } else if (data && data[0]) {
       setErrorMsg(null);
       const palabraCreada: DictionaryItem = {
         id: data[0].id,
         palabra: data[0].word,
         significado: data[0].meaning,
         categoria: data[0].category,
-        author: currentUser.name,
+        author: data[0].author || active.displayName,
       };
 
       setTerminos((prev) => [...prev, palabraCreada]);

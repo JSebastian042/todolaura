@@ -11,7 +11,7 @@ import BackButton from '@/app/components/common/BackButton';
 import AuthorBadge from '@/app/components/common/AuthorBadge';
 
 export default function AlbumPage() {
-  const [currentUser, setCurrentUser] = useState<UserProfile>(USERS.laura);
+  const [currentUser, setCurrentUser] = useState<UserProfile>(() => getActiveUser());
   const [categoriaActiva, setCategoriaActiva] = useState<string>('Todos');
   const [recuerdoSeleccionado, setRecuerdoSeleccionado] = useState<Recuerdo | null>(null);
   const [recuerdos, setRecuerdos] = useState<Recuerdo[]>(recuerdosIniciales);
@@ -27,8 +27,7 @@ export default function AlbumPage() {
   const [nuevosEmojis, setNuevosEmojis] = useState('📸✨');
 
   useEffect(() => {
-    const user = getActiveUser();
-    setCurrentUser(user);
+    setCurrentUser(getActiveUser());
 
     const cargarRecuerdos = async () => {
       try {
@@ -90,32 +89,42 @@ export default function AlbumPage() {
     e.preventDefault();
     if (!nuevoTitulo.trim() || !nuevaDescripcion.trim()) return;
 
-    const nuevoRecuerdo: Recuerdo = {
-      id: String(Date.now()),
+    const active = getActiveUser();
+
+    const nuevoRecuerdoPayload = {
       titulo: nuevoTitulo.trim(),
       fecha: nuevaFecha.trim() || 'Fecha especial',
       categoria: nuevaCategoria,
       descripcion: nuevaDescripcion.trim(),
-      notaAmor: nuevaNotaAmor.trim() || undefined,
-      imagenUrl: nuevaImagenUrl.trim() || undefined,
+      nota_amor: nuevaNotaAmor.trim() || null,
+      imagen_url: nuevaImagenUrl.trim() || null,
       emojis: nuevosEmojis.trim() || '📸✨',
-      author: currentUser.displayName,
+      author: active.displayName,
     };
 
+    let nuevoId = String(Date.now());
     try {
-      await supabase.from('album').insert([{
-        titulo: nuevoRecuerdo.titulo,
-        fecha: nuevoRecuerdo.fecha,
-        categoria: nuevoRecuerdo.categoria,
-        descripcion: nuevoRecuerdo.descripcion,
-        nota_amor: nuevoRecuerdo.notaAmor,
-        imagen_url: nuevoRecuerdo.imagenUrl,
-        emojis: nuevoRecuerdo.emojis,
-        author: nuevoRecuerdo.author,
-      }]);
+      const { data, error } = await supabase.from('album').insert([nuevoRecuerdoPayload]).select();
+      if (!error && data && data[0]) {
+        nuevoId = data[0].id;
+      } else if (error) {
+        console.warn('Error guardando en Supabase:', error.message);
+      }
     } catch (err) {
       console.warn('Fallback a almacenamiento local:', err);
     }
+
+    const nuevoRecuerdo: Recuerdo = {
+      id: nuevoId,
+      titulo: nuevoRecuerdoPayload.titulo,
+      fecha: nuevoRecuerdoPayload.fecha,
+      categoria: nuevoRecuerdoPayload.categoria,
+      descripcion: nuevoRecuerdoPayload.descripcion,
+      notaAmor: nuevoRecuerdoPayload.nota_amor || undefined,
+      imagenUrl: nuevoRecuerdoPayload.imagen_url || undefined,
+      emojis: nuevoRecuerdoPayload.emojis,
+      author: active.displayName,
+    };
 
     const prev = JSON.parse(localStorage.getItem('todolaura_album_recuerdos') || '[]');
     localStorage.setItem('todolaura_album_recuerdos', JSON.stringify([nuevoRecuerdo, ...prev]));
