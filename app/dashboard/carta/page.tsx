@@ -34,19 +34,23 @@ export default function CartaPage() {
           </p>
 
           <p>
-            Hoy es el quinto despliegue de TodoLaura mi vida, ya están las agenditas y también solucioné lo de la diferenciación de perfiles.
+            Hoy es el sexto despliegue de TodoLaura, si... ya van 6 actualizaciones de la pagina que te hice a ti; Ya está el album de recuerdos habilitado para colocar todo lo que hicimos este fin de semana.
           </p>
 
           <p>
-            Hoy fue un día raro para mi, te vi muy angustiada por la situación escolar que decidí tomar acción y poder ayudarnos de esta manera, sé que lo más importante es que tengas la disposición pero me gustaría ayudarte de esta manera... Ayudarte creando una parte donde puedas colocar las cosas de la semana que necesites para estar pendiente que las hagas.
+            Estoy con el corazón muy agradecido por haber tomado la decisión de ir a Cali, fue el mejor fin de semana de toda mi vida y es algo que nunca olvidaré, fue algo tan fuerte que nunca había llorado por alguien tantas veces. Fue algo mágico desde que me embarqué a esa gran aventura
           </p>
 
           <p>
-            Laura ayer me puse un poco sentimental cuando me dijiste que era incondicional (al igual que hoy) quiero serlo contigo siempre, eres mi novia y eres la mujer que amo entonces no tengo complicaciones en ser tierno SOLAMENTE CONTIGO y con nadie más mi mujer bonita.
+            Ayer estaba nublado por la tristeza de dejar la ciudad donde está mi mujer, siento que se me quedó algo y es mi corazón, mi corazón se quedó contigo... Guardalo muy bien que en diciembre me lo tendrás que devolver por esa semanita o por el tiempo que estemos juntos.
           </p>
 
           <p>
-            Posdata: La misma canción de todas las cartas, si quieres alguna otra cosita me avisas que yo con mucho gusto lo hago Laurita, todo lo que sea por ti mi reina preciosa, mi razón, la persona que quiero así, la mujer con la que quiero estar el resto de mi vida, la mujer que amo, que me desespera cada vez que no está, la mujer de mis ojos, mi todo y por sobre todas las cosas El amor de mi vida
+            Posdata: Lo mismo, si quieres alguna otra cosita me avisas que yo con mucho gusto lo hago Laurita, todo lo que sea por ti mi reina preciosa, mi razón, la persona que quiero así, la mujer con la que quiero estar el resto de mi vida, la mujer que amo, que me desespera cada vez que no está, la mujer de mis ojos, mi todo y por sobre todas las cosas El amor de mi vida y la mujer con la que quiero estar el resto de mi vida
+          </p>
+
+          <p>
+            Posdata2: Gracias por dejarme ser tu primer beso.
           </p>
 
           <p className="pt-4 font-semibold text-right text-amber-900">
