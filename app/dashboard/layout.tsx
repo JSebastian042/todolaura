@@ -42,26 +42,7 @@ export default function DashboardLayout({
     );
   }
 
-  // Si Laura intenta entrar a /dashboard/album por URL directa, se bloquea con mensaje romántico
-  if (pathname === '/dashboard/album' && currentUser.id === 'laura') {
-    return (
-      <main className="min-h-screen bg-gradient-to-br from-[#120309] via-[#1f0510] to-[#0a0104] flex flex-col items-center justify-center p-4 sm:p-6 text-center select-none">
-        <div className="max-w-md w-full bg-[#1e0a14]/90 border border-pink-500/30 p-6 sm:p-8 rounded-3xl shadow-2xl backdrop-blur-xl">
-          <div className="text-5xl mb-4 animate-bounce">🔒🌷</div>
-          <h2 className="text-2xl font-bold text-white mb-2">¡Rinconcito Secreto!</h2>
-          <p className="text-xs sm:text-sm text-pink-200/80 leading-relaxed mb-6">
-            Hola mi reina, esta es la opción secreta que preparé para nosotros. ¡No podrás verla hasta que nos veamos por primera vez! ♥
-          </p>
-          <Link
-            href="/dashboard"
-            className="inline-block px-6 py-3 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-2xl text-xs sm:text-sm transition shadow-lg shadow-pink-900/40"
-          >
-            Volver al panel principal ✨
-          </Link>
-        </div>
-      </main>
-    );
-  }
+
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950">

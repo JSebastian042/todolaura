@@ -98,12 +98,12 @@ export default function DashboardPage() {
     },
     {
       titulo: 'Álbum de Recuerdos',
-      descripcion: isLaura ? 'Nuestra historia guardada en fotos (Próximamente)' : 'Nuestra historia guardada en fotos',
+      descripcion: 'Nuestra historia guardada en fotos y videos',
       icono: '📸',
-      href: isLaura ? '#' : '/dashboard/album',
-      colorGradient: isLaura ? 'from-rose-900/20 to-pink-950/10 border-rose-500/20 text-rose-300/70' : 'from-rose-500/20 to-pink-500/10 border-rose-400/30 text-rose-200',
-      hoverGlow: isLaura ? 'hover:shadow-none' : 'hover:shadow-[0_0_25px_rgba(244,63,94,0.3)]',
-      isBlocked: isLaura,
+      href: '/dashboard/album',
+      colorGradient: 'from-rose-500/20 to-pink-500/10 border-rose-400/30 text-rose-200',
+      hoverGlow: 'hover:shadow-[0_0_25px_rgba(244,63,94,0.3)]',
+      isBlocked: false,
     },
   ];
 

@@ -25,18 +25,28 @@ export interface Asignatura {
   icono: string;
 }
 
-export type CategoriaRecuerdo = 'Viajes' | 'Citas' | 'Especiales' | 'Momentos';
+export type CategoriaRecuerdo = string;
+
+export interface AlbumComment {
+  id: string;
+  albumId: string;
+  author: string;
+  text: string;
+  createdAt: string;
+}
 
 export interface Recuerdo {
   id: string;
   titulo: string;
   fecha: string;
-  categoria: CategoriaRecuerdo;
+  categoria: string;
   descripcion: string;
   notaAmor?: string;
   imagenUrl?: string;
+  mediaType?: 'image' | 'video';
   emojis: string;
   author?: string;
+  comments?: AlbumComment[];
 }
 
 export interface DictionaryItem {
