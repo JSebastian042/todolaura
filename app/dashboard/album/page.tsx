@@ -14,11 +14,9 @@ import {
   Trash2,
   Maximize2,
   Tag,
-  ChevronDown,
-  ChevronUp,
   Camera,
-  Link as LinkIcon,
-  Play
+  Play,
+  Share2
 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { getActiveUser, UserProfile } from '@/app/types/auth';
@@ -49,8 +47,8 @@ export default function AlbumPage() {
   const [recuerdos, setRecuerdos] = useState<Recuerdo[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [modalNuevoAbierto, setModalNuevoAbierto] = useState<boolean>(false);
-  const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
-  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+  const [selectedRecuerdo, setSelectedRecuerdo] = useState<Recuerdo | null>(null);
+  const [commentInputModal, setCommentInputModal] = useState<string>('');
   const [fullscreenMedia, setFullscreenMedia] = useState<{
     url: string;
     type: 'image' | 'video';
@@ -79,7 +77,7 @@ export default function AlbumPage() {
 
   useEffect(() => {
     setCurrentUser(getActiveUser());
-    // Limpieza definitiva de recuerdos de prueba en el almacenamiento del navegador
+    // Limpieza de posibles recuerdos de prueba en localStorage
     if (typeof window !== 'undefined') {
       try {
         const local = localStorage.getItem('todolaura_album_recuerdos');
@@ -205,7 +203,6 @@ export default function AlbumPage() {
 
     if (isVideo) {
       setNuevoMediaType('video');
-      // Si el video supera 30MB, advertir
       if (file.size > 30 * 1024 * 1024) {
         alert('El video supera los 30MB. Te recomendamos subir un clip más corto o usar la opción de enlace.');
       }
@@ -333,7 +330,7 @@ export default function AlbumPage() {
 
   // 4. Agregar comentario a un recuerdo
   const handleAddComment = async (albumId: string, textoPersonalizado?: string) => {
-    const text = textoPersonalizado || commentInputs[albumId];
+    const text = textoPersonalizado || commentInputModal;
     if (!text || !text.trim()) return;
 
     const active = getActiveUser();
@@ -347,7 +344,7 @@ export default function AlbumPage() {
       createdAt: new Date().toISOString(),
     };
 
-    // Actualizar UI inmediatamente
+    // Actualizar lista de recuerdos
     setRecuerdos((prev) =>
       prev.map((r) => {
         if (r.id === albumId) {
@@ -360,34 +357,60 @@ export default function AlbumPage() {
       })
     );
 
-    setCommentInputs((prev) => ({ ...prev, [albumId]: '' }));
+    // Actualizar recuerdo seleccionado en el modal
+    if (selectedRecuerdo && selectedRecuerdo.id === albumId) {
+      setSelectedRecuerdo((prev) =>
+        prev
+          ? {
+              ...prev,
+              comments: [...(prev.comments || []), newComment],
+            }
+          : null
+      );
+    }
+
+    setCommentInputModal('');
 
     // Guardar en Supabase
     try {
       const { data, error } = await supabase
         .from('album_comments')
-        .insert([{
-          album_id: albumId,
-          author: active.displayName,
-          text: newComment.text,
-        }])
+        .insert([
+          {
+            album_id: albumId,
+            author: active.displayName,
+            text: newComment.text,
+          },
+        ])
         .select();
 
       if (!error && data && data[0]) {
-        // Actualizar con el ID real de Supabase
+        const realId = data[0].id;
         setRecuerdos((prev) =>
           prev.map((r) => {
             if (r.id === albumId) {
               return {
                 ...r,
                 comments: (r.comments || []).map((c) =>
-                  c.id === tempCommentId ? { ...c, id: data[0].id } : c
+                  c.id === tempCommentId ? { ...c, id: realId } : c
                 ),
               };
             }
             return r;
           })
         );
+        if (selectedRecuerdo && selectedRecuerdo.id === albumId) {
+          setSelectedRecuerdo((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  comments: (prev.comments || []).map((c) =>
+                    c.id === tempCommentId ? { ...c, id: realId } : c
+                  ),
+                }
+              : null
+          );
+        }
       }
     } catch (err) {
       console.warn('Fallback a guardado local de comentario:', err);
@@ -408,6 +431,17 @@ export default function AlbumPage() {
       })
     );
 
+    if (selectedRecuerdo && selectedRecuerdo.id === albumId) {
+      setSelectedRecuerdo((prev) =>
+        prev
+          ? {
+              ...prev,
+              comments: (prev.comments || []).filter((c) => c.id !== commentId),
+            }
+          : null
+      );
+    }
+
     try {
       await supabase.from('album_comments').delete().eq('id', commentId);
     } catch (err) {
@@ -420,6 +454,10 @@ export default function AlbumPage() {
     if (!confirm('¿Estás seguro de que deseas eliminar este recuerdo?')) return;
 
     setRecuerdos((prev) => prev.filter((r) => r.id !== id));
+    if (selectedRecuerdo && selectedRecuerdo.id === id) {
+      setSelectedRecuerdo(null);
+    }
+
     try {
       await supabase.from('album').delete().eq('id', id);
     } catch (err) {
@@ -427,7 +465,7 @@ export default function AlbumPage() {
     }
   };
 
-  // Categorías calculadas dinámicamente a partir de los recuerdos existentes
+  // Categorías calculadas dinámicamente
   const todasLasCategorias = useMemo(() => {
     const fromMemories = Array.from(new Set(recuerdos.map((r) => r.categoria).filter(Boolean)));
     return fromMemories.length > 0 ? ['Todos', ...fromMemories] : [];
@@ -439,15 +477,11 @@ export default function AlbumPage() {
     return recuerdos.filter((r) => r.categoria === categoriaActiva);
   }, [recuerdos, categoriaActiva]);
 
-  const toggleComments = (id: string) => {
-    setOpenComments((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-[#120309] via-[#240616] to-[#0e0207] text-white p-3 sm:p-6 md:p-8 overflow-x-hidden font-sans flex flex-col justify-between">
       <AmbientBackground withTulips />
 
-      <div className="relative z-10 max-w-4xl mx-auto w-full">
+      <div className="relative z-10 max-w-7xl mx-auto w-full">
         {/* Cabecera Principal */}
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-pink-900/40 pb-5">
           <div>
@@ -459,7 +493,7 @@ export default function AlbumPage() {
               Álbum de Recuerdos 📸✨
             </h1>
             <p className="text-xs sm:text-sm text-pink-300/70 mt-1">
-              Fotos, videos, momentos inolvidables y comentarios de los dos.
+              Un mosaico de nuestros momentos más especiales, fotos, videos y recuerdos.
             </p>
           </div>
 
@@ -475,9 +509,9 @@ export default function AlbumPage() {
           </div>
         </header>
 
-        {/* Barra de Filtros por Categorías (solo cuando hay recuerdos) */}
+        {/* Barra de Filtros por Categorías */}
         {recuerdos.length > 0 && todasLasCategorias.length > 1 && (
-          <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 no-scrollbar pt-1">
+          <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 no-scrollbar pt-1">
             {todasLasCategorias.map((cat) => {
               const count = cat === 'Todos' ? recuerdos.length : recuerdos.filter((r) => r.categoria === cat).length;
               const isActive = categoriaActiva === cat;
@@ -501,7 +535,7 @@ export default function AlbumPage() {
           </div>
         )}
 
-        {/* FEED DE RECUERDOS (Estilo Polaroid / Instagram Romántico) */}
+        {/* FEED DE RECUERDOS (Mosaico Dinámico Escalonado - Pinterest Aesthetic) */}
         {loading ? (
           <div className="py-24 text-center text-pink-300 text-sm animate-pulse">
             Abriendo nuestro álbum de recuerdos... 📖✨
@@ -521,210 +555,116 @@ export default function AlbumPage() {
             </button>
           </div>
         ) : (
-          <main className="space-y-8 sm:space-y-10 mb-12">
+          <main className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6 mb-12">
             {recuerdosFiltrados.map((recuerdo) => {
               const isVideo = isVideoMedia(recuerdo.imagenUrl, recuerdo.mediaType);
               const commentsCount = recuerdo.comments?.length || 0;
-              const isAccordionOpen = !!openComments[recuerdo.id];
 
               return (
                 <article
                   key={recuerdo.id}
-                  className="bg-gradient-to-b from-[#1b0614]/90 to-[#12030d]/90 border border-pink-500/25 rounded-3xl shadow-2xl backdrop-blur-xl overflow-hidden hover:border-pink-500/40 transition-all duration-300"
+                  onClick={() => setSelectedRecuerdo(recuerdo)}
+                  className="break-inside-avoid bg-gradient-to-b from-[#1c0615]/95 via-[#160410]/95 to-[#10020c]/95 border border-pink-500/25 rounded-3xl shadow-xl hover:shadow-2xl hover:shadow-pink-500/15 hover:border-pink-500/50 hover:scale-[1.015] transition-all duration-300 overflow-hidden cursor-pointer group flex flex-col"
                 >
-                  {/* Encabezado del Post */}
-                  <div className="p-4 sm:p-5 flex items-center justify-between border-b border-pink-500/10">
-                    <div className="flex items-center gap-3">
-                      <AuthorBadge author={recuerdo.author} prefix="Publicado por" />
-                      <span className="text-[11px] font-mono text-pink-300/60 bg-pink-950/40 border border-pink-500/20 px-2.5 py-0.5 rounded-full">
-                        {recuerdo.categoria}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-pink-200/70 flex items-center gap-1 font-mono">
-                        <Calendar className="w-3.5 h-3.5 text-pink-400" />
-                        {recuerdo.fecha}
-                      </span>
-                      <button
-                        onClick={() => handleDeleteRecuerdo(recuerdo.id)}
-                        className="text-pink-300/40 hover:text-rose-400 transition p-1 cursor-pointer"
-                        title="Eliminar publicación"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Multimedia (Foto o Video) */}
-                  {recuerdo.imagenUrl && (
-                    <div className="relative w-full bg-black/60 flex items-center justify-center overflow-hidden border-b border-pink-500/15">
+                  {/* Vista Multimedia */}
+                  {recuerdo.imagenUrl ? (
+                    <div className="relative w-full overflow-hidden bg-black/40">
                       {isVideo ? (
-                        <video
-                          src={recuerdo.imagenUrl}
-                          controls
-                          playsInline
-                          preload="metadata"
-                          className="w-full max-h-[550px] object-contain"
-                        />
-                      ) : (
-                        <div
-                          className="relative w-full max-h-[550px] cursor-pointer group flex items-center justify-center"
-                          onClick={() =>
-                            setFullscreenMedia({
-                              url: recuerdo.imagenUrl!,
-                              type: 'image',
-                              title: recuerdo.titulo,
-                            })
-                          }
-                        >
-                          <img
+                        <div className="relative w-full aspect-video bg-black/80 flex items-center justify-center">
+                          <video
                             src={recuerdo.imagenUrl}
-                            alt={recuerdo.titulo}
-                            className="w-full max-h-[550px] object-cover sm:object-contain group-hover:scale-[1.01] transition-transform duration-300"
+                            preload="metadata"
+                            muted
+                            playsInline
+                            className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
                           />
-                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                            <div className="p-2 rounded-full bg-black/60 text-white backdrop-blur-md">
-                              <Maximize2 className="w-5 h-5" />
+                          <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                            <div className="p-3.5 rounded-full bg-pink-600/80 text-white shadow-lg backdrop-blur-md group-hover:scale-110 group-hover:bg-pink-600 transition-all">
+                              <Play className="w-5 h-5 fill-white ml-0.5" />
                             </div>
                           </div>
                         </div>
+                      ) : (
+                        <div className="relative w-full overflow-hidden">
+                          <img
+                            src={recuerdo.imagenUrl}
+                            alt={recuerdo.titulo}
+                            className="w-full object-cover group-hover:scale-105 transition-transform duration-500 max-h-[480px]"
+                            loading="lazy"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-3">
+                            <span className="text-[11px] text-white/90 bg-black/60 px-2.5 py-1 rounded-full backdrop-blur-md flex items-center gap-1 font-mono">
+                              <Maximize2 className="w-3 h-3 text-pink-300" />
+                              Ver en grande
+                            </span>
+                          </div>
+                        </div>
                       )}
+
+                      {/* Pill de categoría sobre la imagen */}
+                      <div className="absolute top-3 left-3 flex items-center gap-1.5 z-10">
+                        <span className="text-[10px] font-semibold text-pink-200 bg-[#160410]/80 border border-pink-500/30 backdrop-blur-md px-2.5 py-0.5 rounded-full shadow-md">
+                          {recuerdo.categoria}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Tarjeta sin media: encabezado con badge */
+                    <div className="p-4 border-b border-pink-500/15 flex items-center justify-between">
+                      <span className="text-[10px] font-semibold text-pink-200 bg-pink-950/40 border border-pink-500/20 px-2.5 py-0.5 rounded-full">
+                        {recuerdo.categoria}
+                      </span>
+                      <span className="text-xs text-pink-300/60 font-mono flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-pink-400" />
+                        {recuerdo.fecha}
+                      </span>
                     </div>
                   )}
 
-                  {/* Cuerpo del Recuerdo */}
-                  <div className="p-4 sm:p-6 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">{recuerdo.emojis}</span>
-                      <h2 className="text-lg sm:text-2xl font-bold text-pink-100 tracking-tight">
-                        {recuerdo.titulo}
-                      </h2>
+                  {/* Contenido de la Tarjeta */}
+                  <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <AuthorBadge author={recuerdo.author} prefix="" className="text-[11px]" />
+                        <span className="text-[11px] text-pink-300/60 font-mono flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-pink-400" />
+                          {recuerdo.fecha}
+                        </span>
+                      </div>
+
+                      <div className="flex items-start gap-1.5 pt-1">
+                        <span className="text-xl shrink-0 mt-0.5">{recuerdo.emojis}</span>
+                        <h2 className="text-base sm:text-lg font-bold text-pink-100 group-hover:text-pink-300 transition-colors leading-snug">
+                          {recuerdo.titulo}
+                        </h2>
+                      </div>
+
+                      <p className="text-xs sm:text-[13px] text-pink-100/80 leading-relaxed line-clamp-3">
+                        {recuerdo.descripcion}
+                      </p>
+
+                      {recuerdo.notaAmor && (
+                        <div className="p-2 sm:p-2.5 bg-gradient-to-r from-pink-950/60 to-rose-950/40 border border-pink-500/25 rounded-xl flex items-center gap-2 text-[11px] text-rose-200 italic shadow-inner">
+                          <Heart className="w-3 h-3 fill-pink-500 text-pink-500 shrink-0" />
+                          <span className="truncate">"{recuerdo.notaAmor}"</span>
+                        </div>
+                      )}
                     </div>
 
-                    <p className="text-xs sm:text-sm text-pink-100/90 whitespace-pre-wrap leading-relaxed">
-                      {recuerdo.descripcion}
-                    </p>
-
-                    {recuerdo.notaAmor && (
-                      <div className="p-3 sm:p-3.5 bg-gradient-to-r from-pink-950/50 via-rose-950/40 to-pink-950/50 border border-pink-500/30 rounded-2xl flex items-center gap-2.5 text-xs text-rose-200 italic shadow-inner">
-                        <Heart className="w-4 h-4 fill-pink-500 text-pink-500 shrink-0" />
-                        <span>"{recuerdo.notaAmor}"</span>
-                      </div>
-                    )}
-
-                    {/* Botón para desplegar comentarios */}
-                    <div className="pt-2 border-t border-pink-500/10 flex items-center justify-between">
-                      <button
-                        onClick={() => toggleComments(recuerdo.id)}
-                        className="inline-flex items-center gap-2 text-xs font-semibold text-pink-300 hover:text-pink-100 transition cursor-pointer py-1"
-                      >
-                        <MessageCircle className="w-4 h-4 text-pink-400" />
+                    {/* Footer de la tarjeta con comentarios */}
+                    <div className="pt-3 border-t border-pink-500/10 flex items-center justify-between text-xs text-pink-300/70">
+                      <div className="flex items-center gap-1.5 group-hover:text-pink-200 transition-colors">
+                        <MessageCircle className="w-3.5 h-3.5 text-pink-400" />
                         <span>
                           {commentsCount === 0
-                            ? 'Comentarios'
-                            : `Ver comentarios (${commentsCount})`}
+                            ? 'Comentar'
+                            : `${commentsCount} ${commentsCount === 1 ? 'comentario' : 'comentarios'}`}
                         </span>
-                        {isAccordionOpen ? (
-                          <ChevronUp className="w-3.5 h-3.5" />
-                        ) : (
-                          <ChevronDown className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-
-                      <span className="text-[11px] text-pink-300/50 font-mono">
-                        {(recuerdo.author || 'Laura').toLowerCase().includes('seb') ? '✨ Sebas' : '🌷 Laura'}
+                      </div>
+                      <span className="text-[11px] text-pink-400/80 font-medium group-hover:translate-x-0.5 transition-transform">
+                        Ver recuerdo ✨ &rarr;
                       </span>
                     </div>
-
-                    {/* ACORDEÓN DE COMENTARIOS */}
-                    {isAccordionOpen && (
-                      <div className="pt-3 border-t border-pink-500/15 space-y-3.5 animate-in fade-in slide-in-from-top-2 duration-200">
-                        {/* Lista de comentarios */}
-                        {commentsCount === 0 ? (
-                          <p className="text-xs text-pink-300/60 italic py-1 text-center">
-                            Aún no hay comentarios. ¡Sé el primero en escribirle algo lindo! 💌
-                          </p>
-                        ) : (
-                          <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1 no-scrollbar">
-                            {recuerdo.comments?.map((comment) => (
-                              <div
-                                key={comment.id}
-                                className="group/c p-2.5 sm:p-3 rounded-2xl bg-black/40 border border-pink-500/15 flex items-start justify-between gap-2 text-xs backdrop-blur-md"
-                              >
-                                <div className="space-y-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <AuthorBadge author={comment.author} prefix="" className="text-[10px] py-0 px-2" />
-                                    <span className="text-[10px] text-pink-300/50 font-mono">
-                                      {new Date(comment.createdAt).toLocaleTimeString([], {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                      })}
-                                    </span>
-                                  </div>
-                                  <p className="text-pink-100/90 whitespace-pre-wrap leading-relaxed pl-1">
-                                    {comment.text}
-                                  </p>
-                                </div>
-
-                                <button
-                                  onClick={() => handleDeleteComment(recuerdo.id, comment.id)}
-                                  className="opacity-0 group-hover/c:opacity-100 text-pink-300/40 hover:text-rose-400 p-1 transition cursor-pointer"
-                                  title="Borrar comentario"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Reacciones Rápidas */}
-                        <div className="flex items-center gap-1.5 pt-1">
-                          <span className="text-[10px] text-pink-300/50 mr-1">Reaccionar:</span>
-                          {QUICK_REACTIONS.map((emoji) => (
-                            <button
-                              key={emoji}
-                              type="button"
-                              onClick={() => handleAddComment(recuerdo.id, emoji)}
-                              className="text-base sm:text-lg hover:scale-125 transition-transform p-1 cursor-pointer"
-                              title={`Enviar ${emoji}`}
-                            >
-                              {emoji}
-                            </button>
-                          ))}
-                        </div>
-
-                        {/* Input para agregar comentario */}
-                        <div className="flex items-center gap-2 pt-1">
-                          <input
-                            type="text"
-                            placeholder="Escribe un comentario o respuesta..."
-                            value={commentInputs[recuerdo.id] || ''}
-                            onChange={(e) =>
-                              setCommentInputs((prev) => ({
-                                ...prev,
-                                [recuerdo.id]: e.target.value,
-                              }))
-                            }
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                handleAddComment(recuerdo.id);
-                              }
-                            }}
-                            className="flex-1 px-3.5 py-2 rounded-xl bg-black/50 border border-pink-500/25 focus:border-pink-500 text-xs sm:text-sm text-white placeholder:text-pink-300/40 focus:outline-none"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleAddComment(recuerdo.id)}
-                            className="p-2.5 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white transition active:scale-95 cursor-pointer shadow-md"
-                          >
-                            <Send className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </article>
               );
@@ -732,6 +672,212 @@ export default function AlbumPage() {
           </main>
         )}
       </div>
+
+      {/* VISOR MODAL DETALLADO DE RECUERDO */}
+      {selectedRecuerdo && (
+        <div
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 overflow-y-auto"
+          onClick={() => setSelectedRecuerdo(null)}
+        >
+          <div
+            className="relative w-full max-w-4xl bg-gradient-to-b from-[#1d0617] via-[#14030f] to-[#0c0109] border border-pink-500/35 rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.8)] overflow-hidden my-auto max-h-[92vh] flex flex-col md:flex-row text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Botón Cerrar */}
+            <button
+              onClick={() => setSelectedRecuerdo(null)}
+              className="absolute top-3.5 right-3.5 z-20 p-2 rounded-full bg-black/70 hover:bg-black text-pink-200 hover:text-white border border-pink-500/30 transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Panel Izquierdo: Multimedia */}
+            <div className="w-full md:w-1/2 bg-black/70 flex flex-col items-center justify-center relative min-h-[260px] md:min-h-[460px] border-b md:border-b-0 md:border-r border-pink-500/20">
+              {selectedRecuerdo.imagenUrl ? (
+                isVideoMedia(selectedRecuerdo.imagenUrl, selectedRecuerdo.mediaType) ? (
+                  <video
+                    src={selectedRecuerdo.imagenUrl}
+                    controls
+                    autoPlay
+                    playsInline
+                    className="w-full h-full max-h-[70vh] object-contain"
+                  />
+                ) : (
+                  <div className="relative w-full h-full flex items-center justify-center p-2 group">
+                    <img
+                      src={selectedRecuerdo.imagenUrl}
+                      alt={selectedRecuerdo.titulo}
+                      className="w-full h-full max-h-[70vh] object-contain rounded-xl"
+                    />
+                    <button
+                      onClick={() =>
+                        setFullscreenMedia({
+                          url: selectedRecuerdo.imagenUrl!,
+                          type: 'image',
+                          title: selectedRecuerdo.titulo,
+                        })
+                      }
+                      className="absolute bottom-4 right-4 p-2.5 rounded-full bg-black/75 hover:bg-black text-white border border-pink-500/30 backdrop-blur-md opacity-90 hover:opacity-100 transition cursor-pointer"
+                      title="Ver pantalla completa"
+                    >
+                      <Maximize2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )
+              ) : (
+                <div className="p-8 text-center space-y-2">
+                  <span className="text-6xl block mb-2">{selectedRecuerdo.emojis}</span>
+                  <p className="text-pink-300/70 text-xs italic">Un recuerdo guardado en nuestros corazones ✨</p>
+                </div>
+              )}
+            </div>
+
+            {/* Panel Derecho: Historia & Comentarios */}
+            <div className="w-full md:w-1/2 flex flex-col justify-between max-h-[60vh] md:max-h-[85vh] overflow-hidden">
+              {/* Contenido scrolleable superior */}
+              <div className="p-5 sm:p-6 overflow-y-auto space-y-4 no-scrollbar">
+                {/* Meta Header */}
+                <div className="flex items-center justify-between gap-2 border-b border-pink-500/15 pb-3">
+                  <AuthorBadge author={selectedRecuerdo.author} prefix="Publicado por" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-mono text-pink-300/80 bg-pink-950/50 border border-pink-500/25 px-2.5 py-0.5 rounded-full">
+                      {selectedRecuerdo.categoria}
+                    </span>
+                    <button
+                      onClick={() => handleDeleteRecuerdo(selectedRecuerdo.id)}
+                      className="text-pink-300/40 hover:text-rose-400 transition p-1 cursor-pointer"
+                      title="Eliminar recuerdo"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Título y Fecha */}
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-2xl">{selectedRecuerdo.emojis}</span>
+                    <h2 className="text-xl sm:text-2xl font-bold text-pink-100 leading-tight">
+                      {selectedRecuerdo.titulo}
+                    </h2>
+                  </div>
+                  <span className="text-xs text-pink-300/60 font-mono flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-pink-400" />
+                    {selectedRecuerdo.fecha}
+                  </span>
+                </div>
+
+                {/* Descripción */}
+                <p className="text-xs sm:text-sm text-pink-100/90 whitespace-pre-wrap leading-relaxed">
+                  {selectedRecuerdo.descripcion}
+                </p>
+
+                {/* Nota de amor */}
+                {selectedRecuerdo.notaAmor && (
+                  <div className="p-3.5 bg-gradient-to-r from-pink-950/60 via-rose-950/50 to-pink-950/60 border border-pink-500/30 rounded-2xl flex items-center gap-2.5 text-xs text-rose-200 italic shadow-inner">
+                    <Heart className="w-4 h-4 fill-pink-500 text-pink-500 shrink-0" />
+                    <span>"{selectedRecuerdo.notaAmor}"</span>
+                  </div>
+                )}
+
+                {/* Sección de Comentarios */}
+                <div className="pt-4 border-t border-pink-500/15 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-pink-200 uppercase tracking-wider flex items-center gap-1.5">
+                      <MessageCircle className="w-3.5 h-3.5 text-pink-400" />
+                      <span>Comentarios & Mensajitos</span>
+                    </h3>
+                    <span className="text-[11px] text-pink-400 font-mono">
+                      {selectedRecuerdo.comments?.length || 0}
+                    </span>
+                  </div>
+
+                  {(!selectedRecuerdo.comments || selectedRecuerdo.comments.length === 0) ? (
+                    <p className="text-xs text-pink-300/50 italic py-2 text-center bg-black/20 rounded-xl">
+                      Aún no hay comentarios. ¡Sé el primero en dejarle un mensajito lindo! 💌
+                    </p>
+                  ) : (
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1 no-scrollbar">
+                      {selectedRecuerdo.comments.map((comment) => (
+                        <div
+                          key={comment.id}
+                          className="group/c p-2.5 rounded-xl bg-black/40 border border-pink-500/15 flex items-start justify-between gap-2 text-xs"
+                        >
+                          <div className="space-y-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <AuthorBadge author={comment.author} prefix="" className="text-[10px] py-0 px-2" />
+                              <span className="text-[10px] text-pink-300/50 font-mono">
+                                {new Date(comment.createdAt).toLocaleTimeString([], {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </span>
+                            </div>
+                            <p className="text-pink-100/90 whitespace-pre-wrap leading-relaxed pl-1">
+                              {comment.text}
+                            </p>
+                          </div>
+
+                          <button
+                            onClick={() => handleDeleteComment(selectedRecuerdo.id, comment.id)}
+                            className="opacity-0 group-hover/c:opacity-100 text-pink-300/40 hover:text-rose-400 p-1 transition cursor-pointer"
+                            title="Borrar comentario"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Barra de Reacciones e Input de Comentario (fijo abajo del panel) */}
+              <div className="p-3.5 sm:p-4 bg-[#14020e]/95 border-t border-pink-500/20 space-y-2">
+                {/* Reacciones Rápidas */}
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                  <span className="text-[10px] text-pink-300/60 mr-1 shrink-0">Reaccionar:</span>
+                  {QUICK_REACTIONS.map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => handleAddComment(selectedRecuerdo.id, emoji)}
+                      className="text-base hover:scale-125 transition-transform p-1 cursor-pointer shrink-0"
+                      title={`Reaccionar con ${emoji}`}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Caja de texto para enviar comentario */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Escribe un mensajito para los dos..."
+                    value={commentInputModal}
+                    onChange={(e) => setCommentInputModal(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddComment(selectedRecuerdo.id);
+                      }
+                    }}
+                    className="flex-1 px-3.5 py-2 rounded-xl bg-black/60 border border-pink-500/30 focus:border-pink-500 text-xs text-white placeholder:text-pink-300/40 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddComment(selectedRecuerdo.id)}
+                    className="p-2.5 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white transition active:scale-95 cursor-pointer shadow-md shrink-0"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL NUEVO RECUERDO */}
       {modalNuevoAbierto && (
@@ -744,9 +890,9 @@ export default function AlbumPage() {
               <X className="w-5 h-5" />
             </button>
 
-            <div className="mb-4">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <span>📸✨</span>
+            <div className="mb-5">
+              <h2 className="text-xl font-bold flex items-center gap-2 text-pink-100">
+                <Sparkles className="w-5 h-5 text-pink-400" />
                 <span>Nuevo Recuerdo</span>
               </h2>
               <p className="text-xs text-pink-200/70 mt-1">

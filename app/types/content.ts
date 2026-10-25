@@ -56,3 +56,13 @@ export interface DictionaryItem {
   categoria?: string;
   author?: string;
 }
+
+export interface LoveLetter {
+  id: string;
+  sender: 'Sebastián' | 'Laura' | string;
+  recipient: 'Laura' | 'Sebastián' | string;
+  title: string;
+  date: string;
+  content: string;
+  createdAt?: string;
+}
