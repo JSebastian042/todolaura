@@ -22,7 +22,7 @@ export default function CuadernosHubPage() {
         {/* Badge Superior */}
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-300 text-xs sm:text-sm mb-3">
           <Book className="w-3.5 h-3.5 text-pink-400" />
-          <span>Nuestras Agendas Semanales</span>
+          <span>Nuestras Agendas Semanales & Glosarios</span>
         </div>
 
         {/* Título Principal */}
@@ -31,7 +31,7 @@ export default function CuadernosHubPage() {
             Cuadernos de la Semana 📒
           </h1>
           <p className="text-slate-400 text-xs sm:text-sm max-w-md mx-auto">
-            Hojas de Lunes a Viernes para escribirnos notas, subir fotitos y mandarnos notas de voz.
+            Hojas de Lunes a Sábado para notas, audios, fotos y tu glosario de clases en orden alfabético.
           </p>
           <div className="pt-1">
             <span className="text-[11px] text-pink-300/70 bg-pink-950/40 border border-pink-500/20 px-3 py-1 rounded-full inline-block">
@@ -76,19 +76,19 @@ export default function CuadernosHubPage() {
               {/* Título de la libreta */}
               <div className="space-y-1 mb-6">
                 <span className="text-[10px] uppercase font-bold tracking-widest text-pink-400 font-mono">
-                  Libreta Personal
+                  Libreta Personal & Clases
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-black text-white group-hover:text-pink-200 transition-colors">
                   Cuaderno de Laura
                 </h2>
                 <p className="text-xs sm:text-sm text-pink-200/70 leading-relaxed pt-1">
-                  Pensamientos dulces, fotitos tiernas, stickers y notas con amor.
+                  Notas de la semana, fotitos, audios y glosario de términos de clase A-Z.
                 </p>
               </div>
             </div>
 
             <div className="pl-6 pt-4 border-t border-pink-500/20 flex items-center justify-between text-xs font-semibold text-pink-300 group-hover:text-white transition-colors">
-              <span>Abrir páginas de la semana</span>
+              <span>Abrir notas y glosario</span>
               <span className="text-base group-hover:translate-x-1 transition-transform">📖 →</span>
             </div>
           </Link>
@@ -126,19 +126,19 @@ export default function CuadernosHubPage() {
               {/* Título de la libreta */}
               <div className="space-y-1 mb-6">
                 <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-400 font-mono">
-                  Libreta de Estrategia & Amor
+                  Libreta de Estrategia & Clases
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-black text-white group-hover:text-indigo-200 transition-colors">
-                  Cuaderno de Sebastián
+                  Cuaderno de Sebas
                 </h2>
                 <p className="text-xs sm:text-sm text-indigo-200/70 leading-relaxed pt-1">
-                  Jugadas maestras, memorias del día, foticos y notas de amor para mi reina.
+                  Jugadas maestras, memorias del día, notas y glosario de estudio A-Z.
                 </p>
               </div>
             </div>
 
             <div className="pl-6 pt-4 border-t border-indigo-500/20 flex items-center justify-between text-xs font-semibold text-indigo-300 group-hover:text-white transition-colors">
-              <span>Abrir páginas de la semana</span>
+              <span>Abrir notas y glosario</span>
               <span className="text-base group-hover:translate-x-1 transition-transform">📖 →</span>
             </div>
           </Link>
@@ -146,7 +146,7 @@ export default function CuadernosHubPage() {
         </div>
 
         <div className="mt-8 text-center text-xs text-slate-500">
-          💡 Puedes entrar a cualquiera de los dos cuadernos para escribirle una cartica o dejarle un audio sorpresa.
+          💡 Dentro de cada agenda puedes escribir notas de la semana o consultar y agregar términos a su glosario de clases.
         </div>
       </div>
 

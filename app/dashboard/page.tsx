@@ -105,6 +105,15 @@ export default function DashboardPage() {
       hoverGlow: 'hover:shadow-[0_0_25px_rgba(244,63,94,0.3)]',
       isBlocked: false,
     },
+    {
+      titulo: 'Reglas',
+      descripcion: 'Los 10 acuerdos inmutables de nuestra relación',
+      icono: '📜',
+      href: '/dashboard/reglas',
+      colorGradient: 'from-amber-600/20 to-rose-500/10 border-amber-500/30 text-amber-200',
+      hoverGlow: 'hover:shadow-[0_0_25px_rgba(245,158,11,0.3)]',
+      isBlocked: false,
+    },
   ];
 
   return (

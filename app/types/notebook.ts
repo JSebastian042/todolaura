@@ -20,6 +20,16 @@ export interface NotebookEntry {
   createdAt: string;
 }
 
+export interface GlossaryEntry {
+  id: string;
+  notebookId: NotebookId;
+  term: string;
+  definition: string;
+  subject?: string;
+  author: string;
+  createdAt: string;
+}
+
 export interface DayInfo {
   id: DayOfWeek;
   label: string;

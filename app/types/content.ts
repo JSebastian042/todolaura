@@ -55,6 +55,7 @@ export interface DictionaryItem {
   significado: string;
   categoria?: string;
   author?: string;
+  createdAt?: string;
 }
 
 export interface LoveLetter {
