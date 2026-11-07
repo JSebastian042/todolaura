@@ -141,6 +141,9 @@ export default function NotebookDetailPage() {
   // 2. Cargar términos del Glosario de Clases
   const fetchGlossary = async () => {
     setGlossaryLoading(true);
+    let items: GlossaryEntry[] = [];
+    let supabaseSuccess = false;
+
     try {
       const { data, error } = await supabase
         .from('notebook_glossary')
@@ -149,31 +152,60 @@ export default function NotebookDetailPage() {
         .order('term', { ascending: true });
 
       if (!error && data) {
-        setGlossaryEntries(
-          data.map((item) => ({
-            id: item.id,
-            notebookId: item.notebook_id as NotebookId,
-            term: item.term,
-            definition: item.definition,
-            subject: item.subject,
-            author: item.author || 'Laura',
-            createdAt: item.created_at,
-          }))
-        );
-      } else {
-        const localKey = `todolaura_glossary_${notebookId}`;
-        const cached = localStorage.getItem(localKey);
-        if (cached) setGlossaryEntries(JSON.parse(cached));
-        else setGlossaryEntries([]);
+        supabaseSuccess = true;
+        items = data.map((item) => ({
+          id: item.id,
+          notebookId: item.notebook_id as NotebookId,
+          term: item.term,
+          definition: item.definition,
+          subject: item.subject,
+          author: item.author || 'Laura',
+          createdAt: item.created_at,
+        }));
       }
     } catch (err) {
       console.warn('Error cargando glosario de Supabase:', err);
-      const localKey = `todolaura_glossary_${notebookId}`;
-      const cached = localStorage.getItem(localKey);
-      if (cached) setGlossaryEntries(JSON.parse(cached));
-    } finally {
-      setGlossaryLoading(false);
     }
+
+    // Merge con localStorage para no perder palabras agregadas localmente
+    if (typeof window !== 'undefined') {
+      try {
+        const localKey = `todolaura_glossary_${notebookId}`;
+        const cached = localStorage.getItem(localKey);
+        if (cached) {
+          const localItems: GlossaryEntry[] = JSON.parse(cached);
+          const ids = new Set(items.map((i) => i.id));
+          const terms = new Set(items.map((i) => i.term.toLowerCase().trim()));
+
+          localItems.forEach((loc) => {
+            if (!ids.has(loc.id) && !terms.has(loc.term.toLowerCase().trim())) {
+              items.push(loc);
+              ids.add(loc.id);
+              terms.add(loc.term.toLowerCase().trim());
+
+              // Si Supabase ya está disponible, sincronizar los que estaban solo en local
+              if (supabaseSuccess) {
+                supabase
+                  .from('notebook_glossary')
+                  .insert([
+                    {
+                      notebook_id: loc.notebookId,
+                      term: loc.term,
+                      definition: loc.definition,
+                      subject: loc.subject || null,
+                      author: loc.author,
+                    },
+                  ])
+                  .then(() => {}, () => {});
+              }
+            }
+          });
+        }
+      } catch (e) {}
+    }
+
+    setGlossaryEntries(items);
+    setGlossaryLoading(false);
   };
 
   useEffect(() => {

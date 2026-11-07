@@ -2,6 +2,25 @@ import { LoveLetter } from '@/app/types/content';
 
 export const INITIAL_LETTERS: LoveLetter[] = [
   {
+    id: 'carta-octavo-despliegue',
+    sender: 'Sebastián',
+    recipient: 'Laura',
+    title: 'Octavo despliegue y mi corazón se siente agridulce',
+    date: '3 de noviembre de 2026',
+    content: `Querida Laura,
+
+Hoy es el octavo despliegue de Todolaura, agregué el Glosario de palabras y también las reglas que debemos de seguir para que nuestra relación siga dando frutos como los ha dado
+
+El nombre de la carta es porque es cierto que me siento feliz, pero al verte de maneras en las cuales no puedo entender o no logro dimensionar una respuesta me da mucha impotencia, hoy estuve toda la mañana pensando en como te sentías y me doy cuenta que mi corazón es agridulce, agrio cuando te pasa algo porque no quiero que te pase nada y dulce porque tu le das dulzura a mi vida. Eres mi angelito y me alegra que cada vez puedas esclarecerte y sentirte de mejor manera aunque haya veces que las adversidades no dejen... Recuerda que siempre voy a estar para ti en cualquier momento y en cualquier lugar
+
+Te amo y me duele verte triste, te amo y te quiero ver feliz y conmigo, te amo y siempre estaré para ti aunque haya veces donde mis sentimientos y mi sobrepensadera me ganen
+
+PD: Me gustó mucho como me recomendaste de las reglas, me gusta que hagas eso porque esta pagina es por y para ti. Siguelo haciendo mi amor.
+
+Te amo mi amor, mi vida, mi cielo, mi corazón, mi chica especial, mi mujer, mi novia, mi angelito precioso, mi rayito de luz y la mujer con la que quiero pasar el resto de mi vida.`,
+    createdAt: '2026-11-03T21:31:20.875Z',
+  },
+  {
     id: 'carta-septimo-despliegue',
     sender: 'Sebastián',
     recipient: 'Laura',
