@@ -132,9 +132,11 @@ export default function CartaPage() {
       }
     });
 
-    // Normalizar cartas y garantizar que el séptimo y octavo despliegue sean de Sebastián para Laura
+    // Normalizar cartas y garantizar que las cartas de despliegue sean de Sebastián para Laura
     cartasCargadas = cartasCargadas.map((c) => {
       if (
+        c.id === 'carta-noveno-despliegue' ||
+        c.title.toLowerCase().includes('noveno despliegue') ||
         c.id === 'carta_1793741480875' ||
         c.id === 'carta-octavo-despliegue' ||
         c.title.toLowerCase().includes('octavo despliegue') ||
@@ -171,6 +173,8 @@ export default function CartaPage() {
           const parsed: LoveLetter[] = JSON.parse(local);
           const updated = parsed.map((c) => {
             if (
+              c.id === 'carta-noveno-despliegue' ||
+              c.title.toLowerCase().includes('noveno despliegue') ||
               c.id === 'carta_1793741480875' ||
               c.id === 'carta-octavo-despliegue' ||
               c.title.toLowerCase().includes('octavo despliegue') ||

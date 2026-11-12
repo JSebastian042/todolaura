@@ -2,6 +2,27 @@ import { LoveLetter } from '@/app/types/content';
 
 export const INITIAL_LETTERS: LoveLetter[] = [
   {
+    id: 'carta-noveno-despliegue',
+    sender: 'Sebastián',
+    recipient: 'Laura',
+    title: 'Noveno despliegue con disculpas sinceras',
+    date: '12 de noviembre de 2026',
+    content: `Querida Laurita,
+
+Hoy es el noveno despliegue (o 8,5 despliegue) de TodoLaura, ahora puedes guardar videos en el Album de recuerdos
+
+Estoy muy triste, mentiría si dijera que no estoy llorando mientras escribo esto, me duele mucho esta situación y como no hemos sabido manejarlo jaja. Me da tristeza sentir esto y no poder seguir como estábamos, no pude dormir pensando en ¿Qué haría yo si me faltas tú?
+
+Respondiendo a la pregunta definí después de 5 horas que no sería nada, sería como una mezcla insípida de viseras y organos sin sentido, que no laten ni sufren por nadie; Sería infeliz sin ti mi vida, que haría yo si veo un BL? si veo algo de Corea? Si veo un libro? es que todo me recuerda a ti, veo la letra L y ya pienso en ti, en mi novia preciosa
+
+Quiero pedirte perdón, perdóname una y mil veces por ser como soy, tengo muy claro que es un nuevo mundo para ti y no quiero abrumarte, quiero acompañarte y hacerte feliz de todas las maneras posibles
+
+PD: Lo mismo de siempre, si quieres algo en la página me dices que yo lo haré amor de mi vida, te amo hoy y siempre
+
+Te amo más que ayer y menos que mañana, nunca lo olvides.`,
+    createdAt: '2026-11-12T20:42:00.000Z',
+  },
+  {
     id: 'carta-octavo-despliegue',
     sender: 'Sebastián',
     recipient: 'Laura',
