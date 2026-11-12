@@ -27,18 +27,58 @@ import AuthorBadge from '@/app/components/common/AuthorBadge';
 
 const QUICK_REACTIONS = ['💖', '🥺', '🥰', '🌷', '✨', '🤍'];
 
+const VIDEO_EXTENSIONS_REGEX = /\.(mp4|mov|webm|mkv|avi|m4v|3gp|ogv|ogg)(\?|#|$)/i;
+
+function isVideoFile(file: File): boolean {
+  if (file.type && file.type.startsWith('video/')) return true;
+  return /\.(mp4|mov|webm|mkv|avi|m4v|3gp|ogv|ogg)$/i.test(file.name || '');
+}
+
 function isVideoMedia(url?: string, type?: 'image' | 'video'): boolean {
   if (!url) return false;
   if (type === 'video') return true;
   const lower = url.toLowerCase();
   return (
     lower.startsWith('data:video') ||
-    lower.endsWith('.mp4') ||
-    lower.endsWith('.mov') ||
-    lower.endsWith('.webm') ||
+    lower.startsWith('blob:') ||
+    VIDEO_EXTENSIONS_REGEX.test(lower) ||
     lower.includes('youtube.com') ||
     lower.includes('youtu.be')
   );
+}
+
+function getYouTubeEmbedUrl(url?: string): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes('youtu.be')) {
+      const id = u.pathname.replace('/', '').trim();
+      return id ? `https://www.youtube.com/embed/${id}` : null;
+    }
+    if (u.hostname.includes('youtube.com')) {
+      if (u.pathname.startsWith('/shorts/')) {
+        const id = u.pathname.split('/shorts/')[1]?.split('/')[0];
+        return id ? `https://www.youtube.com/embed/${id}` : null;
+      }
+      if (u.pathname.startsWith('/embed/')) {
+        return url;
+      }
+      const id = u.searchParams.get('v');
+      return id ? `https://www.youtube.com/embed/${id}` : null;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve((e.target?.result as string) || '');
+    reader.onerror = () => reject(new Error('No se pudo leer el archivo multimedia.'));
+    reader.readAsDataURL(file);
+  });
 }
 
 export default function AlbumPage() {
@@ -72,7 +112,10 @@ export default function AlbumPage() {
   const [mediaInputMode, setMediaInputMode] = useState<'file' | 'url'>('file');
   const [nuevoMediaUrl, setNuevoMediaUrl] = useState('');
   const [nuevoMediaType, setNuevoMediaType] = useState<'image' | 'video'>('image');
+  const [selectedMediaFile, setSelectedMediaFile] = useState<File | null>(null);
   const [isProcessingMedia, setIsProcessingMedia] = useState(false);
+  const [isSavingRecuerdo, setIsSavingRecuerdo] = useState(false);
+  const [mediaError, setMediaError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -193,30 +236,56 @@ export default function AlbumPage() {
     }
   };
 
+  const clearSelectedMedia = () => {
+    if (nuevoMediaUrl && nuevoMediaUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(nuevoMediaUrl);
+    }
+    setNuevoMediaUrl('');
+    setSelectedMediaFile(null);
+    setMediaError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   // 2. Manejo de subida y compresión de archivos multimedia
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    clearSelectedMedia();
     setIsProcessingMedia(true);
-    const isVideo = file.type.startsWith('video/');
 
-    if (isVideo) {
+    if (isVideoFile(file)) {
       setNuevoMediaType('video');
-      if (file.size > 30 * 1024 * 1024) {
-        alert('El video supera los 30MB. Te recomendamos subir un clip más corto o usar la opción de enlace.');
-      }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setNuevoMediaUrl(event.target?.result as string);
+      if (file.size > 50 * 1024 * 1024) {
+        setMediaError('El video supera los 50MB permitidos. Recorta el clip o usa la opción de Enlace.');
         setIsProcessingMedia(false);
-      };
-      reader.readAsDataURL(file);
+        return;
+      }
+      try {
+        const previewUrl = URL.createObjectURL(file);
+        setSelectedMediaFile(file);
+        setNuevoMediaUrl(previewUrl);
+      } catch {
+        setMediaError('No se pudo cargar la vista previa del video.');
+      } finally {
+        setIsProcessingMedia(false);
+      }
     } else {
       setNuevoMediaType('image');
       const reader = new FileReader();
+      reader.onerror = () => {
+        setMediaError('No se pudo leer la imagen seleccionada.');
+        setIsProcessingMedia(false);
+      };
       reader.onload = (event) => {
+        const resultUrl = event.target?.result as string;
         const img = new Image();
+        img.onerror = () => {
+          setMediaError('El archivo no es una imagen válida o está dañado.');
+          setIsProcessingMedia(false);
+        };
         img.onload = () => {
           const MAX_WIDTH = 1200;
           const MAX_HEIGHT = 1200;
@@ -244,11 +313,11 @@ export default function AlbumPage() {
             const compressed = canvas.toDataURL('image/jpeg', 0.82);
             setNuevoMediaUrl(compressed);
           } else {
-            setNuevoMediaUrl(event.target?.result as string);
+            setNuevoMediaUrl(resultUrl);
           }
           setIsProcessingMedia(false);
         };
-        img.src = event.target?.result as string;
+        img.src = resultUrl;
       };
       reader.readAsDataURL(file);
     }
@@ -257,7 +326,10 @@ export default function AlbumPage() {
   // 3. Guardar nuevo recuerdo
   const handleGuardarRecuerdo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nuevoTitulo.trim() || !nuevaDescripcion.trim()) return;
+    if (!nuevoTitulo.trim() || !nuevaDescripcion.trim() || isSavingRecuerdo) return;
+
+    setIsSavingRecuerdo(true);
+    setMediaError(null);
 
     const active = getActiveUser();
     const categoriaFinal = isCustomCategoryMode
@@ -265,6 +337,56 @@ export default function AlbumPage() {
       : nuevaCategoria;
 
     const mediaFinalType = isVideoMedia(nuevoMediaUrl, nuevoMediaType) ? 'video' : 'image';
+    let finalMediaUrl = nuevoMediaUrl.trim() || '';
+
+    // Si hay un archivo de video seleccionado, subirlo primero a Supabase Storage
+    if (selectedMediaFile && mediaFinalType === 'video') {
+      const extMatch = selectedMediaFile.name?.match(/\.([a-zA-Z0-9]+)$/);
+      const ext = extMatch ? extMatch[1].toLowerCase() : 'mp4';
+      const storagePath = `videos/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+      let uploadedToStorage = false;
+      try {
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('album-media')
+          .upload(storagePath, selectedMediaFile, {
+            cacheControl: '3600',
+            upsert: false,
+            contentType: selectedMediaFile.type || 'video/mp4',
+          });
+
+        if (!uploadError && uploadData?.path) {
+          const { data: pub } = supabase.storage.from('album-media').getPublicUrl(uploadData.path);
+          if (pub?.publicUrl) {
+            finalMediaUrl = pub.publicUrl;
+            uploadedToStorage = true;
+          }
+        } else if (uploadError) {
+          console.warn('Supabase Storage upload error:', uploadError.message);
+        }
+      } catch (err) {
+        console.warn('Error subiendo video a Storage:', err);
+      }
+
+      // Si Storage aún no está configurado, hacer fallback solo si el video es <= 10MB
+      if (!uploadedToStorage) {
+        if (selectedMediaFile.size <= 10 * 1024 * 1024) {
+          try {
+            finalMediaUrl = await fileToDataUrl(selectedMediaFile);
+          } catch {
+            setMediaError('No se pudo procesar el video. Intenta con otro clip o pega un enlace.');
+            setIsSavingRecuerdo(false);
+            return;
+          }
+        } else {
+          setMediaError(
+            'El video supera 10MB y aún falta activar el bucket "album-media" en Supabase Storage para subir videos grandes.'
+          );
+          setIsSavingRecuerdo(false);
+          return;
+        }
+      }
+    }
 
     const nuevoRecuerdoPayload = {
       titulo: nuevoTitulo.trim(),
@@ -272,13 +394,14 @@ export default function AlbumPage() {
       categoria: categoriaFinal,
       descripcion: nuevaDescripcion.trim(),
       nota_amor: nuevaNotaAmor.trim() || null,
-      imagen_url: nuevoMediaUrl.trim() || null,
+      imagen_url: finalMediaUrl || null,
       media_type: mediaFinalType,
       emojis: nuevosEmojis.trim() || '📸✨',
       author: active.displayName,
     };
 
     let nuevoId = `album_${Date.now()}`;
+    let savedToSupabase = false;
     try {
       const { data, error } = await supabase
         .from('album')
@@ -287,11 +410,22 @@ export default function AlbumPage() {
 
       if (!error && data && data[0]) {
         nuevoId = data[0].id;
+        savedToSupabase = true;
       } else if (error) {
         console.warn('Advertencia insertando en Supabase album:', error.message);
+        if (mediaFinalType === 'video') {
+          setMediaError(`No se pudo guardar el video en Supabase: ${error.message}`);
+          setIsSavingRecuerdo(false);
+          return;
+        }
       }
     } catch (err) {
       console.warn('Fallback a guardado local:', err);
+      if (mediaFinalType === 'video' && !savedToSupabase) {
+        setMediaError('Error de conexión al subir el video. Verifica tu internet e intenta de nuevo.');
+        setIsSavingRecuerdo(false);
+        return;
+      }
     }
 
     const nuevoRecuerdo: Recuerdo = {
@@ -321,10 +455,11 @@ export default function AlbumPage() {
     setNuevoTitulo('');
     setNuevaDescripcion('');
     setNuevaNotaAmor('');
-    setNuevoMediaUrl('');
+    clearSelectedMedia();
     setCustomCategoryInput('');
     setIsCustomCategoryMode(false);
     setNuevosEmojis('📸✨');
+    setIsSavingRecuerdo(false);
     setModalNuevoAbierto(false);
   };
 
@@ -453,13 +588,28 @@ export default function AlbumPage() {
   const handleDeleteRecuerdo = async (id: string) => {
     if (!confirm('¿Estás seguro de que deseas eliminar este recuerdo?')) return;
 
-    setRecuerdos((prev) => prev.filter((r) => r.id !== id));
+    const targetRecuerdo = recuerdos.find((r) => r.id === id);
+
+    setRecuerdos((prev) => {
+      const filtered = prev.filter((r) => r.id !== id);
+      try {
+        localStorage.setItem('todolaura_album_recuerdos', JSON.stringify(filtered));
+      } catch (e) {}
+      return filtered;
+    });
     if (selectedRecuerdo && selectedRecuerdo.id === id) {
       setSelectedRecuerdo(null);
     }
 
     try {
       await supabase.from('album').delete().eq('id', id);
+      // Limpiar archivo de Storage si fue subido al bucket album-media
+      if (targetRecuerdo?.imagenUrl && targetRecuerdo.imagenUrl.includes('/album-media/')) {
+        const path = targetRecuerdo.imagenUrl.split('/album-media/')[1]?.split('?')[0];
+        if (path) {
+          await supabase.storage.from('album-media').remove([decodeURIComponent(path)]);
+        }
+      }
     } catch (err) {
       console.warn('Error eliminando recuerdo de Supabase:', err);
     }
@@ -571,13 +721,20 @@ export default function AlbumPage() {
                     <div className="relative w-full overflow-hidden bg-black/40">
                       {isVideo ? (
                         <div className="relative w-full aspect-video bg-black/80 flex items-center justify-center">
-                          <video
-                            src={recuerdo.imagenUrl}
-                            preload="metadata"
-                            muted
-                            playsInline
-                            className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
-                          />
+                          {getYouTubeEmbedUrl(recuerdo.imagenUrl) ? (
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-rose-950/60 to-purple-950/60">
+                              <Film className="w-8 h-8 text-pink-300/60 mb-1" />
+                              <span className="text-[11px] text-pink-200/70 font-mono">Video de YouTube</span>
+                            </div>
+                          ) : (
+                            <video
+                              src={recuerdo.imagenUrl}
+                              preload="metadata"
+                              muted
+                              playsInline
+                              className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                            />
+                          )}
                           <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                             <div className="p-3.5 rounded-full bg-pink-600/80 text-white shadow-lg backdrop-blur-md group-hover:scale-110 group-hover:bg-pink-600 transition-all">
                               <Play className="w-5 h-5 fill-white ml-0.5" />
@@ -695,13 +852,38 @@ export default function AlbumPage() {
             <div className="w-full md:w-1/2 bg-black/70 flex flex-col items-center justify-center relative min-h-[260px] md:min-h-[460px] border-b md:border-b-0 md:border-r border-pink-500/20">
               {selectedRecuerdo.imagenUrl ? (
                 isVideoMedia(selectedRecuerdo.imagenUrl, selectedRecuerdo.mediaType) ? (
-                  <video
-                    src={selectedRecuerdo.imagenUrl}
-                    controls
-                    autoPlay
-                    playsInline
-                    className="w-full h-full max-h-[70vh] object-contain"
-                  />
+                  getYouTubeEmbedUrl(selectedRecuerdo.imagenUrl) ? (
+                    <iframe
+                      src={getYouTubeEmbedUrl(selectedRecuerdo.imagenUrl)!}
+                      title={selectedRecuerdo.titulo}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="w-full aspect-video max-h-[70vh] rounded-xl"
+                    />
+                  ) : (
+                    <div className="relative w-full h-full flex items-center justify-center p-2">
+                      <video
+                        src={selectedRecuerdo.imagenUrl}
+                        controls
+                        autoPlay
+                        playsInline
+                        className="w-full h-full max-h-[70vh] object-contain rounded-xl"
+                      />
+                      <button
+                        onClick={() =>
+                          setFullscreenMedia({
+                            url: selectedRecuerdo.imagenUrl!,
+                            type: 'video',
+                            title: selectedRecuerdo.titulo,
+                          })
+                        }
+                        className="absolute top-4 left-4 p-2 rounded-full bg-black/75 hover:bg-black text-white border border-pink-500/30 backdrop-blur-md opacity-90 hover:opacity-100 transition cursor-pointer"
+                        title="Ver pantalla completa"
+                      >
+                        <Maximize2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )
                 ) : (
                   <div className="relative w-full h-full flex items-center justify-center p-2 group">
                     <img
@@ -884,7 +1066,10 @@ export default function AlbumPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
           <div className="bg-gradient-to-br from-[#240616] via-[#1a0410] to-[#12020a] border border-pink-500/40 rounded-3xl p-5 sm:p-7 max-w-lg w-full shadow-2xl relative text-white my-6 max-h-[92vh] overflow-y-auto no-scrollbar">
             <button
-              onClick={() => setModalNuevoAbierto(false)}
+              onClick={() => {
+                clearSelectedMedia();
+                setModalNuevoAbierto(false);
+              }}
               className="absolute top-4 right-4 text-pink-300 hover:text-white bg-pink-950/60 p-2 rounded-full border border-pink-500/20 cursor-pointer"
             >
               <X className="w-5 h-5" />
@@ -995,7 +1180,10 @@ export default function AlbumPage() {
                   <div className="flex items-center gap-1 bg-black/40 p-0.5 rounded-lg border border-pink-500/20 text-[11px]">
                     <button
                       type="button"
-                      onClick={() => setMediaInputMode('file')}
+                      onClick={() => {
+                        clearSelectedMedia();
+                        setMediaInputMode('file');
+                      }}
                       className={`px-2.5 py-0.5 rounded-md transition ${
                         mediaInputMode === 'file' ? 'bg-pink-600 text-white' : 'text-pink-300/60'
                       }`}
@@ -1004,7 +1192,10 @@ export default function AlbumPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setMediaInputMode('url')}
+                      onClick={() => {
+                        clearSelectedMedia();
+                        setMediaInputMode('url');
+                      }}
                       className={`px-2.5 py-0.5 rounded-md transition ${
                         mediaInputMode === 'url' ? 'bg-pink-600 text-white' : 'text-pink-300/60'
                       }`}
@@ -1014,12 +1205,18 @@ export default function AlbumPage() {
                   </div>
                 </div>
 
+                {mediaError && (
+                  <div className="p-2.5 rounded-xl bg-rose-950/70 border border-rose-500/50 text-rose-200 text-xs leading-relaxed">
+                    ⚠️ {mediaError}
+                  </div>
+                )}
+
                 {mediaInputMode === 'file' ? (
                   <div>
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/*,video/*"
+                      accept="image/*,video/*,.mp4,.mov,.webm,.mkv,.m4v,.3gp"
                       onChange={handleFileChange}
                       className="hidden"
                     />
@@ -1033,7 +1230,9 @@ export default function AlbumPage() {
                           <Film className="w-5 h-5" />
                         </div>
                         <p className="text-xs font-semibold text-white">Elegir foto o video del dispositivo</p>
-                        <p className="text-[10px] text-pink-300/60 mt-0.5">Fotos optimizadas automáticamente</p>
+                        <p className="text-[10px] text-pink-300/60 mt-0.5">
+                          Soporta fotos y videos (MP4, MOV, WebM hasta 50MB)
+                        </p>
                         {isProcessingMedia && (
                           <p className="text-xs text-pink-400 animate-pulse mt-2">Procesando archivo...</p>
                         )}
@@ -1041,13 +1240,13 @@ export default function AlbumPage() {
                     ) : (
                       <div className="relative rounded-xl overflow-hidden bg-black/60 border border-pink-500/30 flex items-center justify-center max-h-48">
                         {nuevoMediaType === 'video' ? (
-                          <video src={nuevoMediaUrl} controls className="max-h-48 w-full object-contain" />
+                          <video src={nuevoMediaUrl} controls playsInline className="max-h-48 w-full object-contain" />
                         ) : (
                           <img src={nuevoMediaUrl} alt="Preview" className="max-h-48 w-full object-contain" />
                         )}
                         <button
                           type="button"
-                          onClick={() => setNuevoMediaUrl('')}
+                          onClick={clearSelectedMedia}
                           className="absolute top-2 right-2 p-1.5 rounded-full bg-black/80 hover:bg-black text-white cursor-pointer"
                         >
                           <X className="w-4 h-4" />
@@ -1059,9 +1258,11 @@ export default function AlbumPage() {
                   <div>
                     <input
                       type="url"
-                      placeholder="https://ejemplo.com/foto.jpg o video..."
+                      placeholder="https://ejemplo.com/video.mp4 o enlace de YouTube..."
                       value={nuevoMediaUrl}
                       onChange={(e) => {
+                        setMediaError(null);
+                        setSelectedMediaFile(null);
                         setNuevoMediaUrl(e.target.value);
                         setNuevoMediaType(isVideoMedia(e.target.value) ? 'video' : 'image');
                       }}
@@ -1070,7 +1271,15 @@ export default function AlbumPage() {
                     {nuevoMediaUrl && (
                       <div className="mt-2 relative rounded-xl overflow-hidden bg-black/50 border border-pink-500/20 flex items-center justify-center max-h-40">
                         {nuevoMediaType === 'video' ? (
-                          <video src={nuevoMediaUrl} controls className="max-h-40 w-full object-contain" />
+                          getYouTubeEmbedUrl(nuevoMediaUrl) ? (
+                            <iframe
+                              src={getYouTubeEmbedUrl(nuevoMediaUrl)!}
+                              title="Preview YouTube"
+                              className="w-full aspect-video max-h-40"
+                            />
+                          ) : (
+                            <video src={nuevoMediaUrl} controls playsInline className="max-h-40 w-full object-contain" />
+                          )
                         ) : (
                           <img src={nuevoMediaUrl} alt="Preview URL" className="max-h-40 w-full object-contain" />
                         )}
@@ -1121,17 +1330,19 @@ export default function AlbumPage() {
               {/* Botón de Enviar */}
               <button
                 type="submit"
-                disabled={isProcessingMedia}
+                disabled={isProcessingMedia || isSavingRecuerdo}
                 className="w-full py-3 bg-gradient-to-r from-pink-600 via-rose-600 to-purple-600 hover:brightness-110 font-bold text-white text-xs sm:text-sm rounded-xl shadow-lg shadow-pink-950/60 transition cursor-pointer active:scale-98 disabled:opacity-50"
               >
-                Guardar Recuerdo en Nuestro Álbum ✨
+                {isSavingRecuerdo
+                  ? 'Subiendo recuerdo a nuestro álbum... ⏳'
+                  : 'Guardar Recuerdo en Nuestro Álbum ✨'}
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL DE FOTO EN PANTALLA COMPLETA */}
+      {/* MODAL DE FOTO O VIDEO EN PANTALLA COMPLETA */}
       {fullscreenMedia && (
         <div
           className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 select-none"
@@ -1139,15 +1350,26 @@ export default function AlbumPage() {
         >
           <button
             onClick={() => setFullscreenMedia(null)}
-            className="absolute top-4 right-4 p-2.5 rounded-full bg-white/20 hover:bg-white/30 text-white cursor-pointer transition"
+            className="absolute top-4 right-4 p-2.5 rounded-full bg-white/20 hover:bg-white/30 text-white cursor-pointer transition z-10"
           >
             <X className="w-6 h-6" />
           </button>
-          <img
-            src={fullscreenMedia.url}
-            alt={fullscreenMedia.title}
-            className="max-h-[85vh] max-w-[92vw] object-contain rounded-2xl shadow-2xl"
-          />
+          {fullscreenMedia.type === 'video' ? (
+            <video
+              src={fullscreenMedia.url}
+              controls
+              autoPlay
+              playsInline
+              onClick={(e) => e.stopPropagation()}
+              className="max-h-[85vh] max-w-[92vw] object-contain rounded-2xl shadow-2xl"
+            />
+          ) : (
+            <img
+              src={fullscreenMedia.url}
+              alt={fullscreenMedia.title}
+              className="max-h-[85vh] max-w-[92vw] object-contain rounded-2xl shadow-2xl"
+            />
+          )}
           <p className="text-white text-sm mt-3 font-semibold text-center">{fullscreenMedia.title}</p>
         </div>
       )}
