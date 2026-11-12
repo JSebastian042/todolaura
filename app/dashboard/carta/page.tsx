@@ -56,6 +56,7 @@ export default function CartaPage() {
   const cargarCartas = async () => {
     setLoading(true);
     let cartasCargadas: LoveLetter[] = [];
+    const supabaseIds = new Set<string>();
 
     try {
       const { data, error } = await supabase
@@ -73,22 +74,46 @@ export default function CartaPage() {
           content: item.content,
           createdAt: item.created_at,
         }));
+        cartasCargadas.forEach((c) => supabaseIds.add(c.id));
       }
     } catch (err) {
       console.warn('Error conectando con Supabase love_letters:', err);
     }
 
-    // Merge con localStorage
+    // Merge con localStorage y auto-sincronización a Supabase
     if (typeof window !== 'undefined') {
       try {
         const local = localStorage.getItem('todolaura_love_letters');
         if (local) {
           const parsed: LoveLetter[] = JSON.parse(local);
           const idsExistentes = new Set(cartasCargadas.map((c) => c.id));
+          const titlesExistentes = new Set(cartasCargadas.map((c) => c.title.toLowerCase().trim()));
+
           parsed.forEach((p) => {
-            if (!idsExistentes.has(p.id)) {
+            const normalizedTitle = p.title.toLowerCase().trim();
+            if (!idsExistentes.has(p.id) && !titlesExistentes.has(normalizedTitle)) {
               cartasCargadas.push(p);
               idsExistentes.add(p.id);
+              titlesExistentes.add(normalizedTitle);
+
+              // Si es una carta creada que solo existía en local (por fallo anterior en Supabase),
+              // subirla inmediatamente a Supabase para que Laura también la pueda ver
+              if (!p.id.startsWith('carta-') && !p.title.toLowerCase().includes('despliegue')) {
+                supabase
+                  .from('love_letters')
+                  .insert([
+                    {
+                      id: p.id,
+                      sender: p.sender,
+                      recipient: p.recipient,
+                      title: p.title,
+                      date: p.date,
+                      content: p.content,
+                      created_at: p.createdAt || new Date().toISOString(),
+                    },
+                  ])
+                  .then(() => {}, () => {});
+              }
             }
           });
         }
@@ -97,10 +122,13 @@ export default function CartaPage() {
 
     // Merge con cartas base iniciales (como la del 6to y 7mo despliegue)
     const idsExistentes = new Set(cartasCargadas.map((c) => c.id));
+    const titlesExistentes = new Set(cartasCargadas.map((c) => c.title.toLowerCase().trim()));
     INITIAL_LETTERS.forEach((base) => {
-      if (!idsExistentes.has(base.id)) {
+      const normalizedBaseTitle = base.title.toLowerCase().trim();
+      if (!idsExistentes.has(base.id) && !titlesExistentes.has(normalizedBaseTitle)) {
         cartasCargadas.push(base);
         idsExistentes.add(base.id);
+        titlesExistentes.add(normalizedBaseTitle);
       }
     });
 
@@ -200,20 +228,19 @@ export default function CartaPage() {
         .from('love_letters')
         .insert([
           {
+            id: nuevaCarta.id,
             sender: nuevaCarta.sender,
             recipient: nuevaCarta.recipient,
             title: nuevaCarta.title,
             date: nuevaCarta.date,
             content: nuevaCarta.content,
+            created_at: nuevaCarta.createdAt,
           },
         ])
         .select();
 
-      if (!error && data && data[0]) {
-        const realId = data[0].id;
-        setLetters((prev) =>
-          prev.map((c) => (c.id === tempId ? { ...c, id: realId } : c))
-        );
+      if (error) {
+        console.warn('Aviso guardando carta en Supabase:', error.message);
       }
     } catch (err) {
       console.warn('Aviso guardando carta en Supabase:', err);
